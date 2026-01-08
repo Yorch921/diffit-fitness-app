@@ -1,0 +1,231 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  TRAINER
+  ADMIN
+}
+
+enum EmotionalState {
+  MUY_BIEN
+  BIEN
+  NORMAL
+  CANSADO
+  AGOTADO
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  role          Role      @default(CLIENT)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones cuando es CLIENT
+  nutritionPlan NutritionPlan[]
+  trainingPlan  TrainingPlan[]
+  weightEntry   WeightEntry[]
+  files         File[]
+  workoutSessions WorkoutSession[]
+
+  // Relaciones cuando es TRAINER
+  clients       User[]    @relation("TrainerClients")
+  trainer       User?     @relation("TrainerClients", fields: [trainerId], references: [id])
+  trainerId     String?
+
+  @@index([email])
+  @@index([trainerId])
+}
+
+model NutritionPlan {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  pdfUrl      String
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model TrainingPlan {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  weeks       TrainingWeek[]
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model TrainingWeek {
+  id              String    @id @default(cuid())
+  weekNumber      Int
+  startDate       DateTime
+  endDate         DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  trainingPlan    TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  trainingPlanId  String
+  sessions        TrainingSession[]
+
+  @@index([trainingPlanId])
+  @@index([weekNumber])
+}
+
+model TrainingSession {
+  id              String    @id @default(cuid())
+  dayNumber       Int       // 1-5
+  name            String
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  week            TrainingWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  weekId          String
+  exercises       Exercise[]
+  workoutSessions WorkoutSession[]
+
+  @@index([weekId])
+}
+
+model Exercise {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  videoUrl        String?
+  order           Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId       String
+  exerciseData    ExerciseData[]
+
+  @@index([sessionId])
+}
+
+// Datos de un ejercicio en una sesión completada
+model ExerciseData {
+  id          String    @id @default(cuid())
+  reps        Int
+  weight      Float
+  rir         Int       // Repeticiones en reserva
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  exercise    Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exerciseId  String
+
+  workoutSession WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  workoutSessionId String
+
+  @@index([exerciseId])
+  @@index([workoutSessionId])
+}
+
+// Sesión de entrenamiento completada
+model WorkoutSession {
+  id              String    @id @default(cuid())
+  completedAt     DateTime  @default(now())
+  emotionalState  EmotionalState
+  fatigueLevel    Int       // 1-10
+  waterIntake     Float     // litros
+  notes           String?
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+
+  session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId       String
+
+  exerciseData    ExerciseData[]
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([completedAt])
+}
+
+model WeightEntry {
+  id          String    @id @default(cuid())
+  weight      Float
+  date        DateTime
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+
+  @@index([userId])
+  @@index([date])
+}
+
+enum FileType {
+  PDF
+  IMAGE
+  VIDEO
+  OTHER
+}
+
+model File {
+  id          String    @id @default(cuid())
+  name        String
+  type        FileType
+  url         String
+  size        Int
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+
+  @@index([userId])
+  @@index([type])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  title       String
+  message     String
+  type        String    // 'workout', 'photos', 'weight', etc.
+  read        Boolean   @default(false)
+  scheduledFor DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  userId      String
+
+  @@index([userId])
+  @@index([read])
+  @@index([scheduledFor])
+}
