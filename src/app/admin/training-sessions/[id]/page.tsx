@@ -35,6 +35,7 @@ export default function TrainingSessionPage() {
 
   useEffect(() => {
     fetchExercises()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchExercises = async () => {
@@ -151,7 +152,7 @@ export default function TrainingSessionPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="targetSets">Series Objetivo (ej: "3 x 12-10-8")</Label>
+                <Label htmlFor="targetSets">Series Objetivo (ej: &quot;3 x 12-10-8&quot;)</Label>
                 <Input
                   id="targetSets"
                   value={formData.targetSets}

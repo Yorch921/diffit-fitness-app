@@ -36,6 +36,7 @@ export default function SessionExercisesPage({
 
   useEffect(() => {
     fetchExercises()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchExercises = async () => {
@@ -161,7 +162,7 @@ export default function SessionExercisesPage({
                   required
                 />
                 <p className="text-xs text-gray-500">
-                  Indica las series y repeticiones objetivo (ej: "3 x 12-10-8", "4 x 8-10")
+                  Indica las series y repeticiones objetivo (ej: &quot;3 x 12-10-8&quot;, &quot;4 x 8-10&quot;)
                 </p>
               </div>
 

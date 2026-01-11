@@ -49,9 +49,9 @@ export default async function TrainingPlanDetailPage({
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="mb-6">
-        <Button variant="ghost" asChild>
-          <Link href="/admin/training-plans">← Volver a Planes</Link>
-        </Button>
+        <Link href="/admin/training-plans">
+          <Button variant="ghost">← Volver a Planes</Button>
+        </Link>
       </div>
 
       <Card className="mb-6">

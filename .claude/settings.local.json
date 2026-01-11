@@ -13,7 +13,8 @@
       "Bash(npm run db:studio:*)",
       "Bash(npm run db:generate:*)",
       "Bash(npx prisma db push:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

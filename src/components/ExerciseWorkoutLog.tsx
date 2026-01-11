@@ -100,6 +100,7 @@ export default function ExerciseWorkoutLog({
 
   useEffect(() => {
     fetchLogs()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentWeekNumber])
 
   const fetchLogs = async () => {
