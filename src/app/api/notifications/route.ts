@@ -15,10 +15,18 @@ export async function GET(request: NextRequest) {
     const notifications = await prisma.notification.findMany({
       where: {
         userId: session.user.id,
-        sentAt: { not: null }, // Solo mostrar las ya enviadas
+        OR: [
+          { sentAt: { not: null } }, // Mensajes ya enviados
+          {
+            AND: [
+              { scheduledFor: { not: null } },
+              { scheduledFor: { lte: new Date() } }
+            ]
+          }, // Mensajes programados que ya llegó su hora
+        ],
       },
       orderBy: {
-        sentAt: 'desc',
+        createdAt: 'desc',
       },
     })
 
