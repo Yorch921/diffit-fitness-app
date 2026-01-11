@@ -16,9 +16,12 @@ interface WeightEntry {
   notes: string | null
 }
 
+type ViewMode = 'daily' | 'weekly' | 'monthly'
+
 export default function WeightPage() {
   const [entries, setEntries] = useState<WeightEntry[]>([])
   const [showDialog, setShowDialog] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('weekly')
   const [newEntry, setNewEntry] = useState({
     weight: '',
     date: new Date().toISOString().split('T')[0],
@@ -84,6 +87,16 @@ export default function WeightPage() {
     }
   }
 
+  // Datos diarios (todos los registros)
+  const getDailyData = () => {
+    return entries
+      .map((entry) => ({
+        date: entry.date,
+        weight: entry.weight,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }
+
   // Calcular media semanal
   const getWeeklyAverage = () => {
     if (entries.length === 0) return []
@@ -112,7 +125,78 @@ export default function WeightPage() {
       .sort((a, b) => a.date.localeCompare(b.date))
   }
 
-  const weeklyData = getWeeklyAverage()
+  // Calcular media mensual
+  const getMonthlyAverage = () => {
+    if (entries.length === 0) return []
+
+    const months: Record<string, { total: number; count: number }> = {}
+
+    entries.forEach((entry) => {
+      const date = new Date(entry.date)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+      if (!months[monthKey]) {
+        months[monthKey] = { total: 0, count: 0 }
+      }
+
+      months[monthKey].total += entry.weight
+      months[monthKey].count += 1
+    })
+
+    return Object.entries(months)
+      .map(([key, value]) => ({
+        date: `${key}-01`,
+        weight: value.total / value.count,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }
+
+  // Obtener datos según el modo de vista
+  const getChartData = () => {
+    switch (viewMode) {
+      case 'daily':
+        return getDailyData()
+      case 'weekly':
+        return getWeeklyAverage()
+      case 'monthly':
+        return getMonthlyAverage()
+      default:
+        return getWeeklyAverage()
+    }
+  }
+
+  const chartData = getChartData()
+
+  // Formatear etiqueta del eje X según el modo
+  const formatXAxisLabel = (value: string) => {
+    const date = new Date(value)
+    switch (viewMode) {
+      case 'daily':
+        return `${date.getDate()}/${date.getMonth() + 1}`
+      case 'weekly':
+        return `${date.getDate()}/${date.getMonth() + 1}`
+      case 'monthly':
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        return `${months[date.getMonth()]} ${date.getFullYear()}`
+      default:
+        return `${date.getDate()}/${date.getMonth() + 1}`
+    }
+  }
+
+  // Formatear tooltip según el modo
+  const formatTooltipLabel = (label: string) => {
+    const date = new Date(label)
+    switch (viewMode) {
+      case 'daily':
+        return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+      case 'weekly':
+        return `Semana del ${date.toLocaleDateString('es-ES')}`
+      case 'monthly':
+        return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+      default:
+        return date.toLocaleDateString('es-ES')
+    }
+  }
 
   if (loading) {
     return (
@@ -206,18 +290,46 @@ export default function WeightPage() {
         <>
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Evolución del Peso (Media Semanal)</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Evolución del Peso</CardTitle>
+                {/* Selector de vista */}
+                <div className="flex gap-2">
+                  <Button
+                    variant={viewMode === 'daily' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('daily')}
+                  >
+                    📅 Diaria
+                  </Button>
+                  <Button
+                    variant={viewMode === 'weekly' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('weekly')}
+                  >
+                    📊 Semanal
+                  </Button>
+                  <Button
+                    variant={viewMode === 'monthly' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('monthly')}
+                  >
+                    📈 Mensual
+                  </Button>
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {viewMode === 'daily' && 'Todos los registros diarios'}
+                {viewMode === 'weekly' && 'Media semanal de tus registros'}
+                {viewMode === 'monthly' && 'Media mensual de tus registros'}
+              </p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={weeklyData}>
+                <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(value) => {
-                      const date = new Date(value)
-                      return `${date.getDate()}/${date.getMonth() + 1}`
-                    }}
+                    tickFormatter={formatXAxisLabel}
                   />
                   <YAxis
                     domain={['dataMin - 2', 'dataMax + 2']}
@@ -225,7 +337,7 @@ export default function WeightPage() {
                   />
                   <Tooltip
                     formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
-                    labelFormatter={(label) => `Semana del ${new Date(label).toLocaleDateString('es-ES')}`}
+                    labelFormatter={formatTooltipLabel}
                   />
                   <Line
                     type="monotone"

@@ -30,7 +30,16 @@ export default function LoginPage() {
       if (result?.error) {
         setError('Credenciales inválidas')
       } else {
-        router.push('/')
+        // Obtener la sesión para verificar el rol del usuario
+        const response = await fetch('/api/auth/session')
+        const session = await response.json()
+
+        // Redirigir según el rol
+        if (session?.user?.role === 'TRAINER' || session?.user?.role === 'ADMIN') {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
         router.refresh()
       }
     } catch (error) {

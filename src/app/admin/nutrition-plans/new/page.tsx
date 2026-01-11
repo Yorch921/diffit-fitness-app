@@ -25,6 +25,12 @@ export default function NewNutritionPlanPage() {
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     file: null as File | null,
+    goal: 'MAINTENANCE',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fats: '',
+    observations: '',
   })
 
   useEffect(() => {
@@ -35,9 +41,20 @@ export default function NewNutritionPlanPage() {
     try {
       const response = await fetch('/api/admin/clients-list')
       const data = await response.json()
-      setClients(data)
+
+      // Validar que data sea un array antes de actualizar el estado
+      if (Array.isArray(data)) {
+        setClients(data)
+      } else {
+        console.error('La respuesta no es un array:', data)
+        setClients([]) // Asegurar que clients sea siempre un array
+        if (data.error) {
+          setError(data.error)
+        }
+      }
     } catch (error) {
       console.error('Error fetching clients:', error)
+      setClients([]) // En caso de error, asegurar que sea array vacío
     }
   }
 
@@ -74,6 +91,12 @@ export default function NewNutritionPlanPage() {
       if (formData.endDate) {
         data.append('endDate', formData.endDate)
       }
+      data.append('goal', formData.goal)
+      if (formData.calories) data.append('calories', formData.calories)
+      if (formData.protein) data.append('protein', formData.protein)
+      if (formData.carbs) data.append('carbs', formData.carbs)
+      if (formData.fats) data.append('fats', formData.fats)
+      if (formData.observations) data.append('observations', formData.observations)
 
       const response = await fetch('/api/admin/nutrition-plans', {
         method: 'POST',
@@ -121,7 +144,7 @@ export default function NewNutritionPlanPage() {
                 required
               >
                 <option value="">Selecciona un cliente</option>
-                {clients.map((client) => (
+                {Array.isArray(clients) && clients.map((client) => (
                   <option key={client.id} value={client.id}>
                     {client.name} ({client.email})
                   </option>
@@ -191,6 +214,88 @@ export default function NewNutritionPlanPage() {
                   ✓ {formData.file.name} seleccionado
                 </p>
               )}
+            </div>
+
+            {/* Sección: Macros y Objetivo */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">Macronutrientes y Objetivo</h3>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="goal">Objetivo</Label>
+                  <select
+                    id="goal"
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2"
+                    value={formData.goal}
+                    onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
+                  >
+                    <option value="FAT_LOSS">Pérdida de Grasa</option>
+                    <option value="MUSCLE_GAIN">Ganancia Muscular</option>
+                    <option value="MAINTENANCE">Mantenimiento</option>
+                    <option value="HEALTH">Salud</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="calories">Calorías (kcal)</Label>
+                    <Input
+                      id="calories"
+                      type="number"
+                      value={formData.calories}
+                      onChange={(e) => setFormData({ ...formData, calories: e.target.value })}
+                      placeholder="2000"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="protein">Proteínas (g)</Label>
+                    <Input
+                      id="protein"
+                      type="number"
+                      step="0.1"
+                      value={formData.protein}
+                      onChange={(e) => setFormData({ ...formData, protein: e.target.value })}
+                      placeholder="150"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="carbs">Carbohidratos (g)</Label>
+                    <Input
+                      id="carbs"
+                      type="number"
+                      step="0.1"
+                      value={formData.carbs}
+                      onChange={(e) => setFormData({ ...formData, carbs: e.target.value })}
+                      placeholder="200"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="fats">Grasas (g)</Label>
+                    <Input
+                      id="fats"
+                      type="number"
+                      step="0.1"
+                      value={formData.fats}
+                      onChange={(e) => setFormData({ ...formData, fats: e.target.value })}
+                      placeholder="70"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="observations">Observaciones Adicionales</Label>
+                  <textarea
+                    id="observations"
+                    className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2"
+                    value={formData.observations}
+                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                    placeholder="Notas adicionales sobre el plan, recomendaciones, suplementación..."
+                  />
+                </div>
+              </div>
             </div>
 
             {error && (

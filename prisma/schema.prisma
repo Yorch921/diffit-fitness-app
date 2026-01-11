@@ -15,12 +15,31 @@ enum Role {
   ADMIN
 }
 
+enum ClientStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum EmotionalState {
   MUY_BIEN
   BIEN
   NORMAL
   CANSADO
   AGOTADO
+}
+
+enum NutritionGoal {
+  FAT_LOSS
+  MUSCLE_GAIN
+  MAINTENANCE
+  HEALTH
 }
 
 model User {
@@ -33,12 +52,34 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Campos nuevos para clientes
+  status            ClientStatus @default(ACTIVE)
+  age               Int?
+  gender            Gender?
+  height            Float? // cm
+  initialWeight     Float? // kg
+  goal              String?
+  clinicalNotes     String? // intolerancias, alergias
+  nextReviewDate    DateTime?
+
+  // Campos nuevos para nutricionistas
+  phone             String?
+  specialty         String?
+  licenseNumber     String?
+  logoUrl           String?
+  primaryColor      String? // hex color
+  timezone          String?
+  notificationsOn   Boolean @default(true)
+
   // Relaciones cuando es CLIENT
   nutritionPlan NutritionPlan[]
   trainingPlan  TrainingPlan[]
   weightEntry   WeightEntry[]
   files         File[]
   workoutSessions WorkoutSession[]
+  bodyMeasurements BodyMeasurement[]
+  nutritionistComments NutritionistComment[]
+  reviews Review[]
 
   // Relaciones cuando es TRAINER
   clients       User[]    @relation("TrainerClients")
@@ -47,6 +88,8 @@ model User {
 
   @@index([email])
   @@index([trainerId])
+  @@index([status])
+  @@index([nextReviewDate])
 }
 
 model NutritionPlan {
@@ -59,6 +102,14 @@ model NutritionPlan {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  // Campos nuevos
+  goal          NutritionGoal?
+  calories      Int?
+  protein       Float?
+  carbs         Float?
+  fats          Float?
+  observations  String?
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
@@ -76,6 +127,9 @@ model TrainingPlan {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  // Campos nuevos
+  trainerNotes String?
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
@@ -228,4 +282,47 @@ model Notification {
   @@index([userId])
   @@index([read])
   @@index([scheduledFor])
+}
+
+model BodyMeasurement {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  weight    Float?
+  chest     Float? // pecho
+  waist     Float? // cintura
+  hips      Float? // cadera
+  arms      Float? // brazos
+  legs      Float? // piernas
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model NutritionistComment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   String
+  createdAt DateTime @default(now())
+  trainerId String
+
+  @@index([userId, createdAt])
+}
+
+model Review {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainerId       String
+  reviewDate      DateTime
+  changes         String // qué se modificó
+  notes           String?
+  nextReviewDate  DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([userId, reviewDate])
+  @@index([trainerId, nextReviewDate])
 }

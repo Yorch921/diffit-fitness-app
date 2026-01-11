@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffit - Acceso Rápido</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .status {
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .status-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #10b981;
+        }
+
+        .status-offline {
+            background: #ef4444;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+        }
+
+        .credentials {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .credentials h3 {
+            color: #92400e;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .cred-item {
+            font-size: 13px;
+            color: #78350f;
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .checking {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">💪</div>
+            <h1>Diffit</h1>
+            <p class="subtitle">Gestión de Entrenamiento y Nutrición</p>
+        </div>
+
+        <div class="status">
+            <div class="status-item">
+                <span class="status-label">Estado del servidor:</span>
+                <span class="status-value" id="server-status">
+                    <span class="status-dot checking" id="status-dot"></span>
+                    <span id="status-text">Verificando...</span>
+                </span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">URL:</span>
+                <span class="status-value">http://localhost:3000</span>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="http://localhost:3000" class="btn btn-primary" id="open-app">
+                🚀 Abrir Aplicación
+            </a>
+            <a href="http://localhost:3000/login" class="btn btn-secondary">
+                🔐 Ir al Login
+            </a>
+            <a href="http://localhost:5555" class="btn btn-secondary">
+                🗄️ Abrir Prisma Studio
+            </a>
+        </div>
+
+        <div class="credentials">
+            <h3>🔑 Credenciales de Prueba</h3>
+            <div class="cred-item"><strong>Entrenador:</strong> trainer@diffit.com / password123</div>
+            <div class="cred-item"><strong>Cliente:</strong> cliente@diffit.com / password123</div>
+        </div>
+
+        <div class="footer">
+            <p>💡 Asegúrate de que el servidor esté corriendo con <code>npm run dev</code></p>
+        </div>
+    </div>
+
+    <script>
+        // Verificar si el servidor está corriendo
+        async function checkServer() {
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const openAppBtn = document.getElementById('open-app');
+
+            try {
+                const response = await fetch('http://localhost:3000', {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+
+                // Si llega aquí, el servidor responde
+                statusDot.className = 'status-dot status-online';
+                statusText.textContent = 'En línea';
+                openAppBtn.style.opacity = '1';
+                openAppBtn.style.pointerEvents = 'auto';
+            } catch (error) {
+                // Si falla, el servidor no está corriendo
+                statusDot.className = 'status-dot status-offline';
+                statusText.textContent = 'Desconectado';
+                openAppBtn.style.opacity = '0.5';
+                openAppBtn.title = 'Inicia el servidor con: npm run dev';
+            }
+        }
+
+        // Verificar al cargar la página
+        checkServer();
+
+        // Verificar cada 5 segundos
+        setInterval(checkServer, 5000);
+
+        // Manejar clic en botón principal
+        document.getElementById('open-app').addEventListener('click', function(e) {
+            const statusText = document.getElementById('status-text').textContent;
+            if (statusText === 'Desconectado') {
+                e.preventDefault();
+                alert('⚠️ El servidor no está corriendo.\n\nPor favor, inicia el servidor primero con:\nnpm run dev');
+            }
+        });
+    </script>
+</body>
+</html>

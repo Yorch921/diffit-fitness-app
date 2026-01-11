@@ -58,8 +58,11 @@ export async function POST(request: NextRequest) {
       fileType = 'PDF'
     }
 
-    // Crear directorio de uploads si no existe
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
+    // Crear carpeta por mes (formato: YYYY-MM)
+    const now = new Date()
+    const monthFolder = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', monthFolder)
+
     try {
       await mkdir(uploadsDir, { recursive: true })
     } catch (error) {
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
     const filepath = path.join(uploadsDir, filename)
     await writeFile(filepath, buffer)
 
-    const fileUrl = `/uploads/${filename}`
+    const fileUrl = `/uploads/${monthFolder}/${filename}`
 
     // Guardar en la base de datos
     const dbFile = await prisma.file.create({

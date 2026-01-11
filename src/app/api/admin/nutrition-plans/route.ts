@@ -21,6 +21,14 @@ export async function POST(request: NextRequest) {
     const endDate = formData.get('endDate') as string
     const file = formData.get('file') as File
 
+    // Nuevos campos de macros
+    const goal = formData.get('goal') as string
+    const calories = formData.get('calories') as string
+    const protein = formData.get('protein') as string
+    const carbs = formData.get('carbs') as string
+    const fats = formData.get('fats') as string
+    const observations = formData.get('observations') as string
+
     if (!file) {
       return NextResponse.json(
         { error: 'No se proporcionó archivo' },
@@ -81,6 +89,13 @@ export async function POST(request: NextRequest) {
         startDate: new Date(startDate),
         endDate: endDate ? new Date(endDate) : null,
         isActive: true,
+        // Campos de macros
+        goal: goal as any || null,
+        calories: calories ? parseInt(calories) : null,
+        protein: protein ? parseFloat(protein) : null,
+        carbs: carbs ? parseFloat(carbs) : null,
+        fats: fats ? parseFloat(fats) : null,
+        observations: observations || null,
       },
     })
 

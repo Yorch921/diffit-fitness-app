@@ -13,12 +13,23 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, email, password } = body
+    const {
+      name,
+      email,
+      password,
+      age,
+      gender,
+      height,
+      initialWeight,
+      goal,
+      clinicalNotes,
+      nextReviewDate
+    } = body
 
-    // Validar campos
+    // Validar campos requeridos
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: 'Todos los campos son requeridos' },
+        { error: 'Nombre, email y contraseña son requeridos' },
         { status: 400 }
       )
     }
@@ -42,7 +53,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear cliente
+    // Crear cliente con todos los campos
     const hashedPassword = await hash(password, 10)
     const client = await prisma.user.create({
       data: {
@@ -51,6 +62,14 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         role: 'CLIENT',
         trainerId: session.user.id,
+        // Campos opcionales
+        age: age || null,
+        gender: gender || null,
+        height: height || null,
+        initialWeight: initialWeight || null,
+        goal: goal || null,
+        clinicalNotes: clinicalNotes || null,
+        nextReviewDate: nextReviewDate ? new Date(nextReviewDate) : null,
       },
     })
 

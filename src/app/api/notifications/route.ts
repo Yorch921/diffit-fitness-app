@@ -7,31 +7,26 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session || session.user.role === 'CLIENT') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Todos los admins ven todos los clientes
-    const clients = await prisma.user.findMany({
+    // Solo los clientes pueden ver sus notificaciones
+    const notifications = await prisma.notification.findMany({
       where: {
-        role: 'CLIENT',
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        nextReviewDate: true,
+        userId: session.user.id,
+        sentAt: { not: null }, // Solo mostrar las ya enviadas
       },
       orderBy: {
-        name: 'asc',
+        sentAt: 'desc',
       },
     })
 
-    return NextResponse.json(clients)
+    return NextResponse.json(notifications)
   } catch (error) {
-    console.error('Error fetching clients list:', error)
+    console.error('Error fetching notifications:', error)
     return NextResponse.json(
-      { error: 'Error al obtener lista de clientes' },
+      { error: 'Error al obtener notificaciones' },
       { status: 500 }
     )
   }

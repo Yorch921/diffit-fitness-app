@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { formatDate } from '@/lib/utils'
 
-interface File {
+interface ProgressFile {
   id: string
   name: string
   type: 'PDF' | 'IMAGE' | 'VIDEO' | 'OTHER'
@@ -18,15 +18,8 @@ interface File {
   createdAt: string
 }
 
-const fileTypeIcons = {
-  PDF: '📄',
-  IMAGE: '🖼️',
-  VIDEO: '🎥',
-  OTHER: '📎',
-}
-
 export default function FilesPage() {
-  const [files, setFiles] = useState<File[]>([])
+  const [files, setFiles] = useState<ProgressFile[]>([])
   const [showDialog, setShowDialog] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [newFile, setNewFile] = useState({
@@ -84,7 +77,7 @@ export default function FilesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este archivo?')) return
+    if (!confirm('¿Estás seguro de eliminar esta foto?')) return
 
     try {
       await fetch(`/api/files/${id}`, {
@@ -102,13 +95,35 @@ export default function FilesPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  const groupedFiles = files.reduce((acc, file) => {
-    if (!acc[file.type]) {
-      acc[file.type] = []
+  const getMonthName = (date: string) => {
+    const d = new Date(date)
+    const months = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ]
+    return `${months[d.getMonth()]} ${d.getFullYear()}`
+  }
+
+  const getMonthKey = (date: string) => {
+    const d = new Date(date)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  }
+
+  // Filtrar solo imágenes (fotos de progreso)
+  const imageFiles = files.filter(file => file.type === 'IMAGE')
+
+  // Agrupar fotos por mes
+  const groupedByMonth = imageFiles.reduce((acc, file) => {
+    const monthKey = getMonthKey(file.createdAt)
+    if (!acc[monthKey]) {
+      acc[monthKey] = []
     }
-    acc[file.type].push(file)
+    acc[monthKey].push(file)
     return acc
-  }, {} as Record<string, File[]>)
+  }, {} as Record<string, ProgressFile[]>)
+
+  // Ordenar meses de más reciente a más antiguo
+  const sortedMonths = Object.keys(groupedByMonth).sort((a, b) => b.localeCompare(a))
 
   if (loading) {
     return (
@@ -123,20 +138,23 @@ export default function FilesPage() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Subir Archivo</DialogTitle>
+            <DialogTitle>Subir Foto de Progreso</DialogTitle>
             <DialogDescription>
-              Añade fotos, videos o documentos
+              Añade fotos de tu evolución física (solo imágenes)
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="file">Archivo</Label>
+              <Label htmlFor="file">Foto</Label>
               <Input
                 id="file"
                 type="file"
                 onChange={handleFileChange}
-                accept="image/*,video/*,.pdf"
+                accept="image/*"
               />
+              <p className="text-xs text-gray-500">
+                Se guardará automáticamente en la carpeta del mes actual
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Descripción (opcional)</Label>
@@ -144,7 +162,7 @@ export default function FilesPage() {
                 id="description"
                 value={newFile.description}
                 onChange={(e) => setNewFile({ ...newFile, description: e.target.value })}
-                placeholder="Descripción del archivo..."
+                placeholder="Ej: Semana 4, vista frontal..."
               />
             </div>
           </div>
@@ -153,7 +171,7 @@ export default function FilesPage() {
               Cancelar
             </Button>
             <Button onClick={handleUpload} disabled={!newFile.file || uploading}>
-              {uploading ? 'Subiendo...' : 'Subir'}
+              {uploading ? 'Subiendo...' : 'Subir Foto'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -161,111 +179,99 @@ export default function FilesPage() {
 
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Archivos y Fotos</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Fotos de Progreso</h1>
           <p className="mt-2 text-gray-600">
-            Gestiona tus fotos de progreso y documentos
+            Registra tu evolución mes a mes con fotos
           </p>
         </div>
-        <Button onClick={() => setShowDialog(true)}>
-          Subir Archivo
+        <Button onClick={() => setShowDialog(true)} className="flex items-center gap-2">
+          <span>📸</span>
+          Subir Foto
         </Button>
       </div>
 
-      {files.length === 0 ? (
+      {imageFiles.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <div className="text-6xl mb-4">📁</div>
+            <div className="text-6xl mb-4">📸</div>
             <h3 className="text-xl font-semibold mb-2">
-              No hay archivos subidos
+              No hay fotos de progreso
             </h3>
             <p className="text-gray-600 mb-4">
-              Sube fotos de progreso, videos o documentos
+              Sube tu primera foto para comenzar a trackear tu evolución
             </p>
             <Button onClick={() => setShowDialog(true)}>
-              Subir Primer Archivo
+              Subir Primera Foto
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedFiles).map(([type, typeFiles]) => (
-            <Card key={type}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span>{fileTypeIcons[type as keyof typeof fileTypeIcons]}</span>
-                  {type === 'IMAGE' && 'Imágenes'}
-                  {type === 'VIDEO' && 'Videos'}
-                  {type === 'PDF' && 'PDFs'}
-                  {type === 'OTHER' && 'Otros'}
-                  <span className="text-sm font-normal text-gray-500">
-                    ({typeFiles.length})
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {typeFiles.map((file) => (
-                    <div
-                      key={file.id}
-                      className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                    >
-                      {file.type === 'IMAGE' && (
-                        <div className="aspect-square bg-gray-100">
+          {sortedMonths.map((monthKey) => {
+            const monthFiles = groupedByMonth[monthKey]
+            const monthName = getMonthName(monthFiles[0].createdAt)
+
+            return (
+              <Card key={monthKey}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <span>📅</span>
+                      {monthName}
+                    </span>
+                    <span className="text-sm font-normal text-gray-500">
+                      {monthFiles.length} {monthFiles.length === 1 ? 'foto' : 'fotos'}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {monthFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow group"
+                      >
+                        <div className="aspect-square bg-gray-100 relative">
                           <img
                             src={file.url}
                             alt={file.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => window.open(file.url, '_blank')}
                           />
-                        </div>
-                      )}
-                      {file.type === 'VIDEO' && (
-                        <div className="aspect-video bg-gray-100">
-                          <video
-                            src={file.url}
-                            controls
-                            className="w-full h-full"
-                          />
-                        </div>
-                      )}
-                      {(file.type === 'PDF' || file.type === 'OTHER') && (
-                        <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                          <span className="text-6xl">
-                            {fileTypeIcons[file.type]}
-                          </span>
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <h4 className="font-medium text-sm truncate">{file.name}</h4>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatDate(file.createdAt)} • {formatFileSize(file.size)}
-                        </p>
-                        {file.description && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                            {file.description}
-                          </p>
-                        )}
-                        <div className="flex gap-2 mt-3">
-                          <a
-                            href={file.url}
-                            download
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            Descargar
-                          </a>
                           <button
                             onClick={() => handleDelete(file.id)}
-                            className="text-sm text-red-600 hover:underline"
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            title="Eliminar foto"
                           >
-                            Eliminar
+                            ×
                           </button>
                         </div>
+                        <div className="p-3">
+                          <p className="text-xs text-gray-500">
+                            {formatDate(file.createdAt)}
+                          </p>
+                          {file.description && (
+                            <p className="text-sm text-gray-700 mt-1 line-clamp-2">
+                              {file.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {imageFiles.length > 0 && (
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            💡 <strong>Tip:</strong> Las fotos se organizan automáticamente por mes.
+            Intenta subir fotos en la misma fecha cada mes para comparar mejor tu progreso.
+          </p>
         </div>
       )}
     </div>

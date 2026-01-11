@@ -34,9 +34,17 @@ export default function NewTrainingPlanPage() {
     try {
       const response = await fetch('/api/admin/clients-list')
       const data = await response.json()
-      setClients(data)
+
+      // Validar que data sea un array antes de actualizar el estado
+      if (Array.isArray(data)) {
+        setClients(data)
+      } else {
+        console.error('La respuesta no es un array:', data)
+        setClients([])
+      }
     } catch (error) {
       console.error('Error fetching clients:', error)
+      setClients([])
     }
   }
 
