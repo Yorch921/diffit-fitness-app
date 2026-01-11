@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import ExerciseSetEditor, { ExerciseSet } from '@/components/ExerciseSetEditor'
+import SortableExerciseList from '@/components/SortableExerciseList'
 
 interface Exercise {
   id: string
@@ -284,111 +285,14 @@ export default function SessionExercisesPage({
         </Card>
       )}
 
-      {/* Lista de ejercicios */}
-      <div className="space-y-4">
-        {exercises.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">💪</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No hay ejercicios en esta sesión
-                </h3>
-                <p className="text-gray-600">
-                  Agrega ejercicios para comenzar a construir el plan de entrenamiento
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          exercises.map((exercise, index) => (
-            <Card key={exercise.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-gray-500">#{index + 1}</span>
-                      {exercise.name}
-                    </CardTitle>
-                    {/* Mostrar series estructuradas */}
-                    {exercise.sets && exercise.sets.length > 0 && (
-                      <CardDescription className="mt-2">
-                        <strong>Series objetivo:</strong>
-                        {exercise.sets.map((set) => (
-                          <span key={set.setNumber} className="ml-2">
-                            S{set.setNumber}: {set.minReps}-{set.maxReps} reps
-                          </span>
-                        ))}
-                      </CardDescription>
-                    )}
-                    {/* Fallback a targetSets si no hay sets estructurados */}
-                    {(!exercise.sets || exercise.sets.length === 0) && exercise.targetSets && (
-                      <CardDescription className="mt-2">
-                        <strong>Series objetivo:</strong> {exercise.targetSets}
-                      </CardDescription>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(exercise)}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(exercise.id)}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {exercise.description && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-1">
-                      Explicación técnica:
-                    </h4>
-                    <p className="text-gray-600 text-sm whitespace-pre-wrap">
-                      {exercise.description}
-                    </p>
-                  </div>
-                )}
-
-                {exercise.videoUrl && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-1">
-                      Vídeo de referencia:
-                    </h4>
-                    <a
-                      href={exercise.videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm underline"
-                    >
-                      {exercise.videoUrl}
-                    </a>
-                  </div>
-                )}
-
-                {exercise.trainerComment && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <h4 className="text-sm font-medium text-blue-900 mb-1">
-                      💬 Comentario del entrenador:
-                    </h4>
-                    <p className="text-blue-700 text-sm whitespace-pre-wrap">
-                      {exercise.trainerComment}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {/* Lista de ejercicios con drag & drop */}
+      <SortableExerciseList
+        exercises={exercises}
+        sessionId={params.sessionId}
+        onReorder={setExercises}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }
