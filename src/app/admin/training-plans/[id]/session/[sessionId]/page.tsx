@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import ExerciseSetEditor, { ExerciseSet } from '@/components/ExerciseSetEditor'
 
 interface Exercise {
   id: string
@@ -15,6 +16,15 @@ interface Exercise {
   targetSets: string | null
   trainerComment: string | null
   order: number
+  sets: ExerciseSet[]
+}
+
+interface ExerciseFormData {
+  name: string
+  description: string
+  videoUrl: string
+  trainerComment: string
+  sets: ExerciseSet[]
 }
 
 export default function SessionExercisesPage({
@@ -26,12 +36,17 @@ export default function SessionExercisesPage({
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({
+  const [editingExercise, setEditingExercise] = useState<string | null>(null)
+  const [formData, setFormData] = useState<ExerciseFormData>({
     name: '',
     description: '',
     videoUrl: '',
-    targetSets: '',
     trainerComment: '',
+    sets: [
+      { setNumber: 1, minReps: 8, maxReps: 12 },
+      { setNumber: 2, minReps: 8, maxReps: 12 },
+      { setNumber: 3, minReps: 8, maxReps: 12 },
+    ],
   })
 
   useEffect(() => {
@@ -52,37 +67,118 @@ export default function SessionExercisesPage({
     }
   }
 
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      alert('El nombre del ejercicio es obligatorio')
+      return false
+    }
+    if (!formData.description.trim()) {
+      alert('La explicación técnica es obligatoria')
+      return false
+    }
+    if (!formData.trainerComment.trim()) {
+      alert('El comentario del entrenador es obligatorio')
+      return false
+    }
+    if (formData.sets.length === 0) {
+      alert('Debe definir al menos una serie')
+      return false
+    }
+    return true
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      videoUrl: '',
+      trainerComment: '',
+      sets: [
+        { setNumber: 1, minReps: 8, maxReps: 12 },
+        { setNumber: 2, minReps: 8, maxReps: 12 },
+        { setNumber: 3, minReps: 8, maxReps: 12 },
+      ],
+    })
+    setEditingExercise(null)
+    setShowForm(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!validateForm()) return
+
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/admin/training-sessions/${params.sessionId}/exercises`, {
-        method: 'POST',
+      const url = editingExercise
+        ? `/api/admin/exercises/${editingExercise}`
+        : `/api/admin/training-sessions/${params.sessionId}/exercises`
+
+      const method = editingExercise ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
-          order: exercises.length + 1,
+          order: editingExercise ? undefined : exercises.length + 1,
         }),
       })
 
       if (response.ok) {
-        setFormData({
-          name: '',
-          description: '',
-          videoUrl: '',
-          targetSets: '',
-          trainerComment: '',
-        })
-        setShowForm(false)
+        resetForm()
         fetchExercises()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Error al guardar ejercicio')
       }
     } catch (error) {
-      console.error('Error creating exercise:', error)
+      console.error('Error saving exercise:', error)
+      alert('Error al guardar ejercicio')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleEdit = (exercise: Exercise) => {
+    setEditingExercise(exercise.id)
+    setFormData({
+      name: exercise.name,
+      description: exercise.description || '',
+      videoUrl: exercise.videoUrl || '',
+      trainerComment: exercise.trainerComment || '',
+      sets: exercise.sets && exercise.sets.length > 0
+        ? exercise.sets
+        : [
+            { setNumber: 1, minReps: 8, maxReps: 12 },
+            { setNumber: 2, minReps: 8, maxReps: 12 },
+            { setNumber: 3, minReps: 8, maxReps: 12 },
+          ],
+    })
+    setShowForm(true)
+  }
+
+  const handleDelete = async (exerciseId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este ejercicio? Esta acción no se puede deshacer.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/exercises/${exerciseId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        fetchExercises()
+      } else {
+        alert('Error al eliminar ejercicio')
+      }
+    } catch (error) {
+      console.error('Error deleting exercise:', error)
+      alert('Error al eliminar ejercicio')
     }
   }
 
@@ -108,11 +204,11 @@ export default function SessionExercisesPage({
         </Button>
       )}
 
-      {/* Formulario para agregar ejercicio */}
+      {/* Formulario para agregar/editar ejercicio */}
       {showForm && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Nuevo Ejercicio</CardTitle>
+            <CardTitle>{editingExercise ? 'Editar Ejercicio' : 'Nuevo Ejercicio'}</CardTitle>
             <CardDescription>
               Define la información del ejercicio (plan del entrenador - SOLO LECTURA para el cliente)
             </CardDescription>
@@ -131,13 +227,14 @@ export default function SessionExercisesPage({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Explicación Técnica de Ejecución</Label>
+                <Label htmlFor="description">Explicación Técnica de Ejecución *</Label>
                 <textarea
                   id="description"
                   className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe cómo ejecutar correctamente el ejercicio..."
+                  required
                 />
               </div>
 
@@ -152,28 +249,21 @@ export default function SessionExercisesPage({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="targetSets">Series Objetivo *</Label>
-                <Input
-                  id="targetSets"
-                  value={formData.targetSets}
-                  onChange={(e) => setFormData({ ...formData, targetSets: e.target.value })}
-                  placeholder="3 x 12-10-8"
-                  required
-                />
-                <p className="text-xs text-gray-500">
-                  Indica las series y repeticiones objetivo (ej: &quot;3 x 12-10-8&quot;, &quot;4 x 8-10&quot;)
-                </p>
-              </div>
+              {/* Componente de Series Estructuradas */}
+              <ExerciseSetEditor
+                sets={formData.sets}
+                onChange={(sets) => setFormData({ ...formData, sets })}
+              />
 
               <div className="space-y-2">
-                <Label htmlFor="trainerComment">Comentario del Entrenador</Label>
+                <Label htmlFor="trainerComment">Comentario del Entrenador *</Label>
                 <textarea
                   id="trainerComment"
                   className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={formData.trainerComment}
                   onChange={(e) => setFormData({ ...formData, trainerComment: e.target.value })}
                   placeholder="Notas adicionales, precauciones, consejos..."
+                  required
                 />
               </div>
 
@@ -181,21 +271,12 @@ export default function SessionExercisesPage({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setShowForm(false)
-                    setFormData({
-                      name: '',
-                      description: '',
-                      videoUrl: '',
-                      targetSets: '',
-                      trainerComment: '',
-                    })
-                  }}
+                  onClick={resetForm}
                 >
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Guardar Ejercicio'}
+                  {loading ? 'Guardando...' : (editingExercise ? 'Actualizar Ejercicio' : 'Guardar Ejercicio')}
                 </Button>
               </div>
             </form>
@@ -229,11 +310,39 @@ export default function SessionExercisesPage({
                       <span className="text-gray-500">#{index + 1}</span>
                       {exercise.name}
                     </CardTitle>
-                    {exercise.targetSets && (
+                    {/* Mostrar series estructuradas */}
+                    {exercise.sets && exercise.sets.length > 0 && (
+                      <CardDescription className="mt-2">
+                        <strong>Series objetivo:</strong>
+                        {exercise.sets.map((set) => (
+                          <span key={set.setNumber} className="ml-2">
+                            S{set.setNumber}: {set.minReps}-{set.maxReps} reps
+                          </span>
+                        ))}
+                      </CardDescription>
+                    )}
+                    {/* Fallback a targetSets si no hay sets estructurados */}
+                    {(!exercise.sets || exercise.sets.length === 0) && exercise.targetSets && (
                       <CardDescription className="mt-2">
                         <strong>Series objetivo:</strong> {exercise.targetSets}
                       </CardDescription>
                     )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(exercise)}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(exercise.id)}
+                    >
+                      Eliminar
+                    </Button>
                   </div>
                 </div>
               </CardHeader>

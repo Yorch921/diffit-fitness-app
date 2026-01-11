@@ -5,13 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
+interface ExerciseSet {
+  setNumber: number
+  minReps: number
+  maxReps: number
+}
+
 interface Exercise {
   id: string
   name: string
   description: string | null
   videoUrl: string | null
-  targetSets: string | null
+  targetSets: string | null // DEPRECATED - mantener por compatibilidad
   trainerComment: string | null
+  sets: ExerciseSet[] // Series estructuradas
 }
 
 interface WorkoutLog {
@@ -25,18 +32,19 @@ interface WorkoutLog {
 interface ExerciseWorkoutLogProps {
   exercise: Exercise
   currentWeekNumber: number
-  maxSets: number // Número máximo de series (ej: 3)
 }
 
 // Componente para cada fila de serie
 function SetRow({
   setNumber,
+  targetReps,
   initialReps,
   initialWeight,
   onSave,
   loading,
 }: {
   setNumber: number
+  targetReps?: string // Rango objetivo (ej: "8-12")
   initialReps: number | null
   initialWeight: number | null
   onSave: (setNumber: number, reps: number | null, weight: number | null) => Promise<void>
@@ -60,7 +68,12 @@ function SetRow({
 
   return (
     <tr>
-      <td className="px-3 py-2 text-sm font-medium text-gray-900">{setNumber}</td>
+      <td className="px-3 py-2 text-sm font-medium text-gray-900">
+        {setNumber}
+        {targetReps && (
+          <span className="ml-2 text-xs text-gray-500 font-normal">({targetReps})</span>
+        )}
+      </td>
       <td className="px-3 py-2">
         <Input
           type="number"
@@ -93,7 +106,6 @@ function SetRow({
 export default function ExerciseWorkoutLog({
   exercise,
   currentWeekNumber,
-  maxSets = 3,
 }: ExerciseWorkoutLogProps) {
   const [logs, setLogs] = useState<WorkoutLog[]>([])
   const [loading, setLoading] = useState(false)
@@ -159,7 +171,22 @@ export default function ExerciseWorkoutLog({
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
           <h4 className="text-sm font-semibold text-gray-700">📋 Plan del Entrenador</h4>
 
-          {exercise.targetSets && (
+          {/* Mostrar series estructuradas si existen */}
+          {exercise.sets && exercise.sets.length > 0 && (
+            <div>
+              <span className="text-xs font-medium text-gray-600">Series objetivo:</span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {exercise.sets.map((set) => (
+                  <span key={set.setNumber} className="text-sm font-semibold text-gray-900 bg-white px-2 py-1 rounded border border-gray-300">
+                    S{set.setNumber}: {set.minReps}-{set.maxReps} reps
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback a targetSets si no hay sets estructurados (compatibilidad) */}
+          {(!exercise.sets || exercise.sets.length === 0) && exercise.targetSets && (
             <div>
               <span className="text-xs font-medium text-gray-600">Series objetivo:</span>
               <p className="text-sm font-semibold text-gray-900">{exercise.targetSets}</p>
@@ -211,21 +238,41 @@ export default function ExerciseWorkoutLog({
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {Array.from({ length: maxSets }).map((_, index) => {
-                  const setNumber = index + 1
-                  const log = getLogForSet(setNumber)
+                {/* Iterar por exercise.sets si existen (series estructuradas) */}
+                {exercise.sets && exercise.sets.length > 0 ? (
+                  exercise.sets.map((set) => {
+                    const log = getLogForSet(set.setNumber)
 
-                  return (
-                    <SetRow
-                      key={setNumber}
-                      setNumber={setNumber}
-                      initialReps={log?.reps || null}
-                      initialWeight={log?.weight || null}
-                      onSave={handleSaveLog}
-                      loading={loading}
-                    />
-                  )
-                })}
+                    return (
+                      <SetRow
+                        key={set.setNumber}
+                        setNumber={set.setNumber}
+                        targetReps={`${set.minReps}-${set.maxReps}`}
+                        initialReps={log?.reps || null}
+                        initialWeight={log?.weight || null}
+                        onSave={handleSaveLog}
+                        loading={loading}
+                      />
+                    )
+                  })
+                ) : (
+                  /* Fallback: 3 series por defecto si no hay sets estructurados */
+                  Array.from({ length: 3 }).map((_, index) => {
+                    const setNumber = index + 1
+                    const log = getLogForSet(setNumber)
+
+                    return (
+                      <SetRow
+                        key={setNumber}
+                        setNumber={setNumber}
+                        initialReps={log?.reps || null}
+                        initialWeight={log?.weight || null}
+                        onSave={handleSaveLog}
+                        loading={loading}
+                      />
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </div>

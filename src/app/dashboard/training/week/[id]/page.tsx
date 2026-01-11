@@ -31,6 +31,13 @@ export default async function TrainingWeekDetailPage({
       sessions: {
         include: {
           exercises: {
+            include: {
+              sets: {
+                orderBy: {
+                  setNumber: 'asc',
+                },
+              },
+            },
             orderBy: {
               order: 'asc',
             },
@@ -143,7 +150,6 @@ export default async function TrainingWeekDetailPage({
                       key={exercise.id}
                       exercise={exercise}
                       currentWeekNumber={week.weekNumber}
-                      maxSets={3} // Por defecto 3 series, se puede ajustar según targetSets
                     />
                   ))
                 )}
