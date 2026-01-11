@@ -80,6 +80,8 @@ model User {
   bodyMeasurements BodyMeasurement[]
   nutritionistComments NutritionistComment[]
   reviews Review[]
+  notifications Notification[] @relation("UserNotifications")
+  clientWorkoutLogs ClientWorkoutLog[]
 
   // Relaciones cuando es TRAINER
   clients       User[]    @relation("TrainerClients")
@@ -174,8 +176,10 @@ model TrainingSession {
 model Exercise {
   id              String    @id @default(cuid())
   name            String
-  description     String?
-  videoUrl        String?
+  description     String?   // Explicación técnica de ejecución
+  videoUrl        String?   // Enlace a vídeo
+  targetSets      String?   // Series objetivo (ej: "3 x 12-10-8")
+  trainerComment  String?   // Comentario del entrenador
   order           Int
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -183,6 +187,7 @@ model Exercise {
   session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   sessionId       String
   exerciseData    ExerciseData[]
+  clientWorkoutLogs ClientWorkoutLog[]
 
   @@index([sessionId])
 }
@@ -226,6 +231,31 @@ model WorkoutSession {
   @@index([userId])
   @@index([sessionId])
   @@index([completedAt])
+}
+
+// Registro del cliente por ejercicio, semana/microciclo y serie
+// Este modelo es SOLO editable por el cliente
+model ClientWorkoutLog {
+  id              String    @id @default(cuid())
+  weekNumber      Int       // Semana/microciclo (1, 2, 3, 4...)
+  setNumber       Int       // Número de serie (1, 2, 3...)
+  reps            Int?      // Repeticiones reales realizadas
+  weight          Float?    // Peso real utilizado
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relación con el ejercicio del plan del entrenador (solo lectura)
+  exercise        Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exerciseId      String
+
+  // Cliente que registra
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+
+  @@unique([exerciseId, userId, weekNumber, setNumber])
+  @@index([exerciseId])
+  @@index([userId])
+  @@index([weekNumber])
 }
 
 model WeightEntry {
@@ -277,6 +307,7 @@ model Notification {
   sentAt      DateTime?
   createdAt   DateTime  @default(now())
 
+  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
   userId      String
 
   @@index([userId])
