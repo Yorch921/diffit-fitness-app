@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { formatDate } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default async function TrainingPage() {
   const session = await getServerSession(authOptions)
@@ -13,164 +14,278 @@ export default async function TrainingPage() {
     redirect('/login')
   }
 
-  // Obtener todos los planes de entrenamiento del usuario con sus semanas
-  const trainingPlans = await prisma.trainingPlan.findMany({
+  // Obtener mesociclo activo con template completo
+  const activeMesocycle = await prisma.clientMesocycle.findFirst({
     where: {
-      userId: session.user.id,
+      clientId: session.user.id,
+      isActive: true,
     },
     include: {
-      weeks: {
-        orderBy: {
-          weekNumber: 'asc',
-        },
+      template: {
         include: {
-          sessions: {
-            orderBy: {
-              name: 'asc',
+          days: {
+            orderBy: { dayNumber: 'asc' },
+            include: {
+              exercises: {
+                orderBy: { order: 'asc' },
+                include: {
+                  sets: {
+                    orderBy: { setNumber: 'asc' },
+                  },
+                },
+              },
             },
           },
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
+      trainer: {
+        select: {
+          name: true,
+        },
+      },
+      microcycles: {
+        orderBy: { weekNumber: 'asc' },
+        include: {
+          _count: {
+            select: { workoutDayLogs: true },
+          },
+        },
+      },
     },
   })
 
-  // Plan activo
-  const activePlan = trainingPlans.find((plan) => plan.isActive)
-
-  // Planes anteriores (no activos)
-  const previousPlans = trainingPlans.filter((plan) => !plan.isActive)
+  // Obtener mesociclos completados para historial
+  const completedMesocycles = await prisma.clientMesocycle.findMany({
+    where: {
+      clientId: session.user.id,
+      isCompleted: true,
+    },
+    include: {
+      template: {
+        select: {
+          title: true,
+          description: true,
+          numberOfDays: true,
+        },
+      },
+      trainer: {
+        select: {
+          name: true,
+        },
+      },
+      _count: {
+        select: { microcycles: true },
+      },
+    },
+    orderBy: { completedAt: 'desc' },
+  })
 
   // Función para determinar la semana actual
-  const getCurrentWeek = (plan: typeof activePlan) => {
-    if (!plan) return null
+  const getCurrentMicrocycle = () => {
+    if (!activeMesocycle) return null
     const today = new Date()
-    return plan.weeks.find(
-      (week) =>
-        today >= new Date(week.startDate) && today <= new Date(week.endDate)
+    return activeMesocycle.microcycles.find(
+      (microcycle) =>
+        today >= new Date(microcycle.startDate) && today <= new Date(microcycle.endDate)
     )
   }
 
-  const currentWeek = activePlan ? getCurrentWeek(activePlan) : null
+  const currentMicrocycle = activeMesocycle ? getCurrentMicrocycle() : null
 
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Plan de Entrenamiento</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Entrenamiento</h1>
         <p className="mt-2 text-gray-600">
-          Consulta tu rutina y realiza tus entrenamientos
+          Consulta tu plan y registra tus entrenamientos
         </p>
       </div>
 
       {/* Plan Activo */}
-      {activePlan ? (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                      ACTIVO
-                    </span>
-                    {activePlan.title}
-                  </CardTitle>
-                  <CardDescription className="mt-2">
-                    {activePlan.weeks.length} semanas • Inicio: {formatDate(activePlan.startDate)}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {activePlan.description && (
-                <p className="text-gray-600 mb-4">{activePlan.description}</p>
-              )}
+      {activeMesocycle ? (
+        <Tabs defaultValue="plan" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="plan">Mi Plan Actual</TabsTrigger>
+            <TabsTrigger value="registro">Registro de Entrenamientos</TabsTrigger>
+          </TabsList>
 
-              {/* Información de semana actual */}
-              {currentWeek && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-blue-900">
-                        📅 Semana Actual: Semana {currentWeek.weekNumber}
-                      </p>
-                      <p className="text-xs text-blue-700 mt-1">
-                        {formatDate(currentWeek.startDate)} - {formatDate(currentWeek.endDate)}
-                      </p>
+          {/* Tab 1: Mi Plan Actual (Solo lectura) */}
+          <TabsContent value="plan" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                        ACTIVO
+                      </span>
+                      {activeMesocycle.template.title}
+                    </CardTitle>
+                    <CardDescription className="mt-2">
+                      {activeMesocycle.durationWeeks} semanas • {activeMesocycle.template.numberOfDays} días por semana
+                      <br />
+                      Inicio: {formatDate(activeMesocycle.startDate)} • Fin: {formatDate(activeMesocycle.endDate)}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {activeMesocycle.template.description && (
+                  <p className="text-gray-600 mb-6">{activeMesocycle.template.description}</p>
+                )}
+
+                {/* Estadísticas del mesociclo */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {activeMesocycle.durationWeeks}
                     </div>
-                    <span className="text-2xl">💪</span>
+                    <p className="text-xs text-gray-600">Semanas totales</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {activeMesocycle.template.numberOfDays}
+                    </div>
+                    <p className="text-xs text-gray-600">Días/semana</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {currentMicrocycle ? currentMicrocycle.weekNumber : '-'}
+                    </div>
+                    <p className="text-xs text-gray-600">Semana actual</p>
                   </div>
                 </div>
-              )}
 
-              {/* Estadísticas del plan */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {activePlan.weeks.length}
-                  </div>
-                  <p className="text-xs text-gray-600">Semanas</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {activePlan.weeks.reduce((acc, week) => acc + week.sessions.length, 0)}
-                  </div>
-                  <p className="text-xs text-gray-600">Sesiones</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-900">
-                    {currentWeek ? currentWeek.weekNumber : '-'}
-                  </div>
-                  <p className="text-xs text-gray-600">Semana actual</p>
-                </div>
-              </div>
-
-              {/* Botón para ver todas las semanas */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900">Semanas del Plan</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {activePlan.weeks.map((week) => {
-                    const isCurrentWeek = currentWeek?.id === week.id
-                    const isFutureWeek = new Date() < new Date(week.startDate)
-
-                    return (
-                      <Link
-                        key={week.id}
-                        href={`/dashboard/training/week/${week.id}`}
-                        className={`p-4 border-2 rounded-lg text-center transition-all hover:shadow-md ${
-                          isCurrentWeek
-                            ? 'border-blue-500 bg-blue-50'
-                            : isFutureWeek
-                            ? 'border-gray-200 bg-gray-50 opacity-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="text-lg font-bold text-gray-900">
-                          Semana {week.weekNumber}
+                {/* Estructura del template (días) */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900">Estructura de la Semana Tipo</h4>
+                  {activeMesocycle.template.days.map((day) => (
+                    <Card key={day.id} className="border-l-4 border-l-blue-500">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{day.name}</CardTitle>
+                        {day.description && (
+                          <CardDescription>{day.description}</CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {day.exercises.map((exercise, idx) => (
+                            <div key={exercise.id} className="border-l-2 border-gray-200 pl-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h5 className="font-medium text-gray-900">
+                                    {idx + 1}. {exercise.name}
+                                  </h5>
+                                  {exercise.description && (
+                                    <p className="text-sm text-gray-600 mt-1">
+                                      {exercise.description}
+                                    </p>
+                                  )}
+                                  {exercise.trainerComment && (
+                                    <p className="text-sm text-blue-600 mt-1 italic">
+                                      💬 {exercise.trainerComment}
+                                    </p>
+                                  )}
+                                  <div className="mt-2 space-y-1">
+                                    {exercise.sets.map((set) => (
+                                      <div key={set.id} className="text-sm text-gray-700">
+                                        <span className="font-medium">Serie {set.setNumber}:</span>{' '}
+                                        {set.minReps === set.maxReps
+                                          ? `${set.minReps} reps`
+                                          : `${set.minReps}-${set.maxReps} reps`}
+                                        {set.restSeconds && (
+                                          <span className="text-gray-500">
+                                            {' • '}
+                                            Descanso: {set.restSeconds}s
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {week.sessions.length} sesiones
-                        </p>
-                        {isCurrentWeek && (
-                          <span className="inline-block mt-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
-                            Actual
-                          </span>
-                        )}
-                        {isFutureWeek && (
-                          <span className="inline-block mt-2 px-2 py-0.5 bg-gray-400 text-white text-xs rounded-full">
-                            Próxima
-                          </span>
-                        )}
-                      </Link>
-                    )
-                  })}
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab 2: Registro de Entrenamientos */}
+          <TabsContent value="registro" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Registro de Entrenamientos</CardTitle>
+                <CardDescription>
+                  Registra tus sesiones completadas semana por semana
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {currentMicrocycle && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">
+                          📅 Semana Actual: Semana {currentMicrocycle.weekNumber}
+                        </p>
+                        <p className="text-xs text-blue-700 mt-1">
+                          {formatDate(currentMicrocycle.startDate)} - {formatDate(currentMicrocycle.endDate)}
+                        </p>
+                      </div>
+                      <span className="text-2xl">💪</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900">Semanas del Mesociclo</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {activeMesocycle.microcycles.map((microcycle) => {
+                      const isCurrentWeek = currentMicrocycle?.id === microcycle.id
+                      const isFutureWeek = new Date() < new Date(microcycle.startDate)
+                      const logsCount = microcycle._count.workoutDayLogs
+
+                      return (
+                        <Link
+                          key={microcycle.id}
+                          href={`/dashboard/training/log/microcycle/${microcycle.weekNumber}`}
+                          className={`p-4 border-2 rounded-lg text-center transition-all hover:shadow-md ${
+                            isCurrentWeek
+                              ? 'border-blue-500 bg-blue-50'
+                              : isFutureWeek
+                              ? 'border-gray-200 bg-gray-50 opacity-50 pointer-events-none'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="text-lg font-bold text-gray-900">
+                            S{microcycle.weekNumber}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {logsCount > 0 ? `${logsCount} registros` : 'Sin registros'}
+                          </p>
+                          {isCurrentWeek && (
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+                              Actual
+                            </span>
+                          )}
+                          {isFutureWeek && (
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-gray-400 text-white text-xs rounded-full">
+                              Próxima
+                            </span>
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       ) : (
         <Card className="mb-6">
           <CardContent className="py-12 text-center">
@@ -185,62 +300,46 @@ export default async function TrainingPage() {
         </Card>
       )}
 
-      {/* Historial de Planes Anteriores */}
-      {previousPlans.length > 0 && (
+      {/* Historial de Mesociclos Anteriores */}
+      {completedMesocycles.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              📚 Historial de Planes
+              📚 Historial de Mesociclos
             </CardTitle>
             <CardDescription>
-              Planes de entrenamiento anteriores ({previousPlans.length})
+              Mesociclos completados ({completedMesocycles.length})
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {previousPlans.map((plan) => (
+              {completedMesocycles.map((mesocycle) => (
                 <div
-                  key={plan.id}
+                  key={mesocycle.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{plan.title}</h4>
+                    <h4 className="font-medium text-gray-900">{mesocycle.template.title}</h4>
                     <p className="text-sm text-gray-500 mt-1">
-                      {plan.weeks.length} semanas • {formatDate(plan.startDate)}
-                      {plan.endDate && ` - ${formatDate(plan.endDate)}`}
+                      {mesocycle.durationWeeks} semanas • {formatDate(mesocycle.startDate)} - {formatDate(mesocycle.endDate)}
                     </p>
-                    {plan.description && (
+                    {mesocycle.template.description && (
                       <p className="text-sm text-gray-600 mt-1 line-clamp-1">
-                        {plan.description}
+                        {mesocycle.template.description}
                       </p>
                     )}
                   </div>
                   <div className="flex gap-2 ml-4">
                     <Link
-                      href={`/dashboard/training/plan/${plan.id}`}
+                      href={`/dashboard/training/history/${mesocycle.id}`}
                       className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
                     >
-                      Ver Plan
+                      Ver Detalle
                     </Link>
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Mensaje si no hay ningún plan */}
-      {trainingPlans.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="text-6xl mb-4">💪</div>
-            <h3 className="text-xl font-semibold mb-2">
-              Aún no tienes planes de entrenamiento
-            </h3>
-            <p className="text-gray-600">
-              Tu entrenador te asignará una rutina de ejercicios pronto
-            </p>
           </CardContent>
         </Card>
       )}

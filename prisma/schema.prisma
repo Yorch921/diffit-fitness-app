@@ -73,15 +73,17 @@ model User {
 
   // Relaciones cuando es CLIENT
   nutritionPlan NutritionPlan[]
-  trainingPlan  TrainingPlan[]
   weightEntry   WeightEntry[]
   files         File[]
-  workoutSessions WorkoutSession[]
   bodyMeasurements BodyMeasurement[]
   nutritionistComments NutritionistComment[]
   reviews Review[]
   notifications Notification[] @relation("UserNotifications")
-  clientWorkoutLogs ClientWorkoutLog[]
+
+  // NUEVAS relaciones para sistema de templates y mesociclos
+  trainingTemplates     TrainingTemplate[] @relation("TrainerTemplates")
+  clientMesocycles      ClientMesocycle[]  @relation("ClientMesocycles")
+  trainerMesocycles     ClientMesocycle[]  @relation("TrainerMesocycles")
 
   // Relaciones cuando es TRAINER
   clients       User[]    @relation("TrainerClients")
@@ -120,86 +122,75 @@ model NutritionPlan {
   @@index([isActive])
 }
 
-model TrainingPlan {
-  id          String    @id @default(cuid())
-  title       String
-  description String?
-  startDate   DateTime
-  endDate     DateTime?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+// ============================================================================
+// NUEVOS MODELOS: SISTEMA DE TEMPLATES Y MESOCICLOS
+// ============================================================================
 
-  // Campos nuevos
-  trainerNotes String?
+// 1. PLANTILLAS (Semana Tipo - Reutilizable)
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  weeks       TrainingWeek[]
-
-  @@index([userId])
-  @@index([isActive])
-}
-
-model TrainingWeek {
+model TrainingTemplate {
   id              String    @id @default(cuid())
-  weekNumber      Int
-  startDate       DateTime
-  endDate         DateTime
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  trainingPlan    TrainingPlan @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
-  trainingPlanId  String
-  sessions        TrainingSession[]
-
-  @@index([trainingPlanId])
-  @@index([weekNumber])
-}
-
-model TrainingSession {
-  id              String    @id @default(cuid())
-  dayNumber       Int       // 1-5
-  name            String
+  trainerId       String
+  title           String
   description     String?
+  numberOfDays    Int       @default(5)  // 3-5 days
+  trainerNotes    String?
+  isArchived      Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  week            TrainingWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
-  weekId          String
-  exercises       Exercise[]
-  workoutSessions WorkoutSession[]
+  trainer         User      @relation("TrainerTemplates", fields: [trainerId], references: [id], onDelete: Cascade)
+  days            TemplateDay[]
+  mesocycles      ClientMesocycle[]
 
-  @@index([weekId])
+  @@index([trainerId])
+  @@index([isArchived])
 }
 
-model Exercise {
+model TemplateDay {
   id              String    @id @default(cuid())
-  name            String
-  description     String?   // Explicación técnica de ejecución
-  videoUrl        String?   // Enlace a vídeo
-  targetSets      String?   // Series objetivo (ej: "3 x 12-10-8") - DEPRECATED, usar 'sets'
-  trainerComment  String?   // Comentario del entrenador
+  templateId      String
+  dayNumber       Int       // 1-5
+  name            String    // "Día 1 - Pecho/Tríceps"
+  description     String?
   order           Int
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId       String
-  exerciseData    ExerciseData[]
-  clientWorkoutLogs ClientWorkoutLog[]
-  sets            ExerciseSet[] // Series estructuradas (nuevo)
+  template        TrainingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  exercises       Exercise[]
+  workoutDayLogs  WorkoutDayLog[]
 
-  @@index([sessionId])
+  @@unique([templateId, dayNumber])
+  @@index([templateId])
 }
 
-// Series estructuradas del plan del entrenador
+model Exercise {
+  id              String    @id @default(cuid())
+  templateDayId   String
+  name            String
+  description     String?
+  videoUrl        String?
+  trainerComment  String?
+  order           Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  templateDay     TemplateDay @relation(fields: [templateDayId], references: [id], onDelete: Cascade)
+  sets            ExerciseSet[]
+  exerciseLogs    ExerciseLog[]
+
+  @@index([templateDayId])
+  @@index([order])
+}
+
 model ExerciseSet {
   id              String    @id @default(cuid())
   exerciseId      String
-  setNumber       Int       // Número de serie (1, 2, 3...)
-  minReps         Int       // Reps mínimas del rango
-  maxReps         Int       // Reps máximas del rango
+  setNumber       Int
+  minReps         Int
+  maxReps         Int
+  restSeconds     Int?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -209,71 +200,114 @@ model ExerciseSet {
   @@index([exerciseId])
 }
 
-// Datos de un ejercicio en una sesión completada
-model ExerciseData {
-  id          String    @id @default(cuid())
-  reps        Int
-  weight      Float
-  rir         Int       // Repeticiones en reserva
-  notes       String?
-  createdAt   DateTime  @default(now())
+// 2. MESOCICLOS (Asignación Temporal + Registro)
 
-  exercise    Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  exerciseId  String
+model ClientMesocycle {
+  id                String    @id @default(cuid())
+  clientId          String
+  templateId        String
+  trainerId         String
 
-  workoutSession WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
-  workoutSessionId String
+  startDate         DateTime
+  durationWeeks     Int       @default(20)
+  endDate           DateTime
 
-  @@index([exerciseId])
-  @@index([workoutSessionId])
+  isActive          Boolean   @default(true)
+  isCompleted       Boolean   @default(false)
+  completedAt       DateTime?
+
+  trainerNotes      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  client            User      @relation("ClientMesocycles", fields: [clientId], references: [id], onDelete: Cascade)
+  template          TrainingTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  trainer           User      @relation("TrainerMesocycles", fields: [trainerId], references: [id], onDelete: Cascade)
+  microcycles       Microcycle[]
+
+  @@index([clientId])
+  @@index([trainerId])
+  @@index([isActive])
+  @@index([templateId])
 }
 
-// Sesión de entrenamiento completada
-model WorkoutSession {
+model Microcycle {
   id              String    @id @default(cuid())
-  completedAt     DateTime  @default(now())
-  emotionalState  EmotionalState
-  fatigueLevel    Int       // 1-10
-  waterIntake     Float     // litros
-  notes           String?
-
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
-
-  session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId       String
-
-  exerciseData    ExerciseData[]
-
-  @@index([userId])
-  @@index([sessionId])
-  @@index([completedAt])
-}
-
-// Registro del cliente por ejercicio, semana/microciclo y serie
-// Este modelo es SOLO editable por el cliente
-model ClientWorkoutLog {
-  id              String    @id @default(cuid())
-  weekNumber      Int       // Semana/microciclo (1, 2, 3, 4...)
-  setNumber       Int       // Número de serie (1, 2, 3...)
-  reps            Int?      // Repeticiones reales realizadas
-  weight          Float?    // Peso real utilizado
+  mesocycleId     String
+  weekNumber      Int       // 1-20
+  startDate       DateTime
+  endDate         DateTime
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  // Relación con el ejercicio del plan del entrenador (solo lectura)
-  exercise        Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  mesocycle       ClientMesocycle @relation(fields: [mesocycleId], references: [id], onDelete: Cascade)
+  workoutDayLogs  WorkoutDayLog[]
+
+  @@unique([mesocycleId, weekNumber])
+  @@index([mesocycleId])
+  @@index([startDate])
+}
+
+model WorkoutDayLog {
+  id              String    @id @default(cuid())
+  microcycleId    String
+  templateDayId   String
+
+  completedDate   DateTime
+  durationMinutes Int?
+  rpe             Int?      // 1-10
+  fatigue         Int?      // 1-10
+  emotionalState  EmotionalState?
+  clientNotes     String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  microcycle      Microcycle @relation(fields: [microcycleId], references: [id], onDelete: Cascade)
+  templateDay     TemplateDay @relation(fields: [templateDayId], references: [id], onDelete: Restrict)
+  exerciseLogs    ExerciseLog[]
+
+  @@index([microcycleId])
+  @@index([templateDayId])
+  @@index([completedDate])
+}
+
+model ExerciseLog {
+  id              String    @id @default(cuid())
+  workoutDayLogId String
   exerciseId      String
 
-  // Cliente que registra
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  @@unique([exerciseId, userId, weekNumber, setNumber])
+  workoutDayLog   WorkoutDayLog @relation(fields: [workoutDayLogId], references: [id], onDelete: Cascade)
+  exercise        Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  setLogs         SetLog[]
+
+  @@index([workoutDayLogId])
   @@index([exerciseId])
-  @@index([userId])
-  @@index([weekNumber])
 }
+
+model SetLog {
+  id              String    @id @default(cuid())
+  exerciseLogId   String
+  setNumber       Int
+  reps            Int
+  weight          Float
+  rir             Int?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  exerciseLog     ExerciseLog @relation(fields: [exerciseLogId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseLogId, setNumber])
+  @@index([exerciseLogId])
+}
+
+// ============================================================================
+// MODELOS EXISTENTES (Sin cambios)
+// ============================================================================
 
 model WeightEntry {
   id          String    @id @default(cuid())

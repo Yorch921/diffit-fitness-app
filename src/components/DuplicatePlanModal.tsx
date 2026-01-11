@@ -84,7 +84,7 @@ export default function DuplicatePlanModal({
         <CardHeader>
           <CardTitle>Duplicar Plan de Entrenamiento</CardTitle>
           <CardDescription>
-            Crea una copia de "{planTitle}" para otro cliente
+            Crea una copia de &quot;{planTitle}&quot; para otro cliente
           </CardDescription>
         </CardHeader>
         <CardContent>

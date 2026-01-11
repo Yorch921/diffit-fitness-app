@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatDate, formatWeight } from '@/lib/utils'
 import ClientProgressCharts from '@/components/ClientProgressCharts'
+import MesocycleAssignModal from '@/components/MesocycleAssignModal'
 
 type TabType = 'general' | 'nutrition' | 'training' | 'progress'
 
@@ -19,6 +20,8 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('general')
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<{ id: string; title: string } | null>(null)
   const [formData, setFormData] = useState({
     name: client.name,
     email: client.email,
@@ -32,9 +35,9 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
   })
 
   const activeNutrition = client.nutritionPlan.find((p: any) => p.isActive)
-  const activeTraining = client.trainingPlan.find((p: any) => p.isActive)
+  const activeTraining = client.clientMesocycles.find((m: any) => m.isActive)
   const previousNutrition = client.nutritionPlan.filter((p: any) => !p.isActive)
-  const previousTraining = client.trainingPlan.filter((p: any) => !p.isActive)
+  const previousTraining = client.clientMesocycles.filter((m: any) => !m.isActive && m.isCompleted)
 
   const weightData = client.weightEntry
     .slice()
@@ -140,7 +143,15 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">
-                {client.workoutSessions.length}
+                {client.clientMesocycles.reduce(
+                  (acc: number, m: any) =>
+                    acc +
+                    m.microcycles.reduce(
+                      (sum: number, micro: any) => sum + (micro._count?.workoutDayLogs || 0),
+                      0
+                    ),
+                  0
+                )}
               </div>
               <p className="text-sm text-gray-600">Entrenamientos</p>
             </div>
@@ -152,9 +163,9 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">
-                {client.nutritionPlan.length}
+                {client.clientMesocycles.length}
               </div>
-              <p className="text-sm text-gray-600">Planes Nutrición</p>
+              <p className="text-sm text-gray-600">Mesociclos</p>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <div className="text-2xl font-bold text-yellow-600">
@@ -464,96 +475,141 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Plan de Entrenamiento Actual</CardTitle>
-                <Link href="/admin/training-plans/new">
-                  <Button size="sm">+ Crear Nuevo Plan</Button>
+                <Link href="/admin/training-templates">
+                  <Button size="sm">+ Asignar Plan desde Plantilla</Button>
                 </Link>
               </div>
             </CardHeader>
             <CardContent>
               {activeTraining ? (
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">{activeTraining.title}</h3>
-                  {activeTraining.description && (
-                    <p className="text-gray-600 mb-3">{activeTraining.description}</p>
-                  )}
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-900">
+                      <strong>Plantilla Base:</strong> {activeTraining.template.title}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-lg font-bold text-blue-600">{activeTraining.weeks.length}</div>
-                      <div className="text-xs text-gray-600">Semanas</div>
+                      <div className="text-lg font-bold text-blue-600">{activeTraining.durationWeeks}</div>
+                      <div className="text-xs text-gray-600">Semanas Totales</div>
                     </div>
                     <div className="text-center p-3 bg-green-50 rounded-lg">
                       <div className="text-lg font-bold text-green-600">
-                        {activeTraining.weeks[0]?.sessions.length || 0}
+                        {activeTraining.template.numberOfDays}
                       </div>
                       <div className="text-xs text-gray-600">Días/Semana</div>
                     </div>
+                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                      <div className="text-lg font-bold text-purple-600">
+                        {activeTraining.microcycles.length}
+                      </div>
+                      <div className="text-xs text-gray-600">Microciclos</div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">Inicio: {formatDate(activeTraining.startDate)}</p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    <strong>Inicio:</strong> {formatDate(activeTraining.startDate)} -{' '}
+                    <strong>Fin:</strong> {formatDate(activeTraining.endDate)}
+                  </p>
                   {activeTraining.trainerNotes && (
                     <div className="p-3 bg-gray-50 rounded-lg mb-4">
                       <p className="text-sm font-medium text-gray-700 mb-1">Notas del Entrenador:</p>
                       <p className="text-sm text-gray-600 whitespace-pre-wrap">{activeTraining.trainerNotes}</p>
                     </div>
                   )}
-                  <Link href={`/admin/training-plans/${activeTraining.id}`}>
-                    <Button variant="outline">Ver Detalle del Plan</Button>
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link href={`/admin/training-templates/${activeTraining.template.id}`}>
+                      <Button variant="outline">Ver Plantilla</Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (confirm('¿Deseas desactivar el mesociclo actual y asignar uno nuevo?')) {
+                          setShowAssignModal(true)
+                        }
+                      }}
+                    >
+                      Cambiar Plan
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                <p className="text-gray-500">No tiene plan de entrenamiento activo</p>
+                <div>
+                  <p className="text-gray-500 mb-4">No tiene plan de entrenamiento activo</p>
+                  <Button onClick={() => setShowAssignModal(true)}>
+                    Asignar Plan desde Plantilla
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
 
           {/* Últimos Entrenamientos */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Últimos Entrenamientos Completados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {client.workoutSessions.length === 0 ? (
-                <p className="text-gray-500">No hay entrenamientos registrados</p>
-              ) : (
-                <div className="space-y-3">
-                  {client.workoutSessions.map((workout: any) => (
-                    <div key={workout.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{workout.session.name}</h4>
-                        <p className="text-sm text-gray-600">Semana {workout.session.week.weekNumber}</p>
+          {activeTraining && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Progreso del Mesociclo Actual</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activeTraining.microcycles.length === 0 ? (
+                  <p className="text-gray-500">No hay microciclos registrados</p>
+                ) : (
+                  <div className="space-y-3">
+                    {activeTraining.microcycles.slice(0, 5).map((micro: any) => (
+                      <div key={micro.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">Semana {micro.weekNumber}</h4>
+                          <p className="text-sm text-gray-600">
+                            {formatDate(micro.startDate)} - {formatDate(micro.endDate)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium">
+                            {micro._count?.workoutDayLogs || 0} /{' '}
+                            {activeTraining.template.numberOfDays} días
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {Math.round(
+                              ((micro._count?.workoutDayLogs || 0) /
+                                activeTraining.template.numberOfDays) *
+                                100
+                            )}
+                            % completado
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium">{formatDate(workout.completedAt)}</div>
-                        <div className="text-xs text-gray-500">{workout.emotionalState}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Historial de Planes */}
+          {/* Historial de Mesociclos */}
           {previousTraining.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Historial de Planes</CardTitle>
+                <CardTitle>Historial de Mesociclos Completados</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {previousTraining.map((plan: any) => (
-                    <div key={plan.id} className="p-4 border rounded-lg flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{plan.title}</h4>
-                        <p className="text-sm text-gray-600">
-                          {plan.weeks.length} semanas • {formatDate(plan.startDate)} -{' '}
-                          {plan.endDate ? formatDate(plan.endDate) : 'Presente'}
-                        </p>
+                  {previousTraining.map((meso: any) => (
+                    <div key={meso.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h4 className="font-medium">{meso.template.title}</h4>
+                          <p className="text-sm text-gray-600">
+                            {meso.durationWeeks} semanas • {formatDate(meso.startDate)} - {formatDate(meso.endDate)}
+                          </p>
+                        </div>
+                        {meso.completedAt && (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                            Completado
+                          </span>
+                        )}
                       </div>
-                      <Link href={`/admin/training-plans/${plan.id}`}>
-                        <Button variant="outline" size="sm">
-                          Ver
-                        </Button>
-                      </Link>
+                      <div className="text-sm text-gray-600">
+                        Total de microciclos: {meso.microcycles.length}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -561,6 +617,20 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
             </Card>
           )}
         </div>
+      )}
+
+      {/* Modal de Asignación de Mesociclo */}
+      {showAssignModal && (
+        <MesocycleAssignModal
+          templateId=""
+          templateTitle="Selecciona plantilla"
+          clientId={client.id}
+          onClose={() => setShowAssignModal(false)}
+          onSuccess={() => {
+            setShowAssignModal(false)
+            window.location.reload()
+          }}
+        />
       )}
 
       {activeTab === 'progress' && (

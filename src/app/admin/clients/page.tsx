@@ -28,12 +28,8 @@ export default async function ClientsPage() {
         where: { isActive: true },
         take: 1,
       },
-      trainingPlan: {
+      clientMesocycles: {
         where: { isActive: true },
-        take: 1,
-      },
-      workoutSessions: {
-        orderBy: { completedAt: 'desc' },
         take: 1,
       },
       weightEntry: {
@@ -43,8 +39,7 @@ export default async function ClientsPage() {
       _count: {
         select: {
           nutritionPlan: true,
-          trainingPlan: true,
-          workoutSessions: true,
+          clientMesocycles: true,
           weightEntry: true,
         },
       },

@@ -21,13 +21,10 @@ interface Client {
     specialty: string | null
   } | null
   nutritionPlan: Array<{ id: string; title: string }>
-  trainingPlan: Array<{ id: string; title: string }>
-  workoutSessions: Array<{ completedAt: Date }>
   weightEntry: Array<{ date: Date; weight: number }>
   _count: {
     nutritionPlan: number
-    trainingPlan: number
-    workoutSessions: number
+    clientMesocycles: number
     weightEntry: number
   }
 }
@@ -45,15 +42,8 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
 
   // Calcular última actividad
   const getLastActivity = (client: Client) => {
-    const lastWorkout = client.workoutSessions[0]?.completedAt
     const lastWeight = client.weightEntry[0]?.date
-
-    if (!lastWorkout && !lastWeight) return null
-
-    if (!lastWorkout) return lastWeight
-    if (!lastWeight) return lastWorkout
-
-    return lastWorkout > lastWeight ? lastWorkout : lastWeight
+    return lastWeight || null
   }
 
   // Filtrar clientes
@@ -67,7 +57,7 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
 
       // Filtro por plan
       const hasNutritionPlan = client.nutritionPlan.length > 0
-      const hasTrainingPlan = client.trainingPlan.length > 0
+      const hasTrainingPlan = client._count.clientMesocycles > 0
       let matchesPlan = true
       if (planFilter === 'NUTRITION') matchesPlan = hasNutritionPlan && !hasTrainingPlan
       if (planFilter === 'TRAINING') matchesPlan = hasTrainingPlan && !hasNutritionPlan
@@ -266,7 +256,7 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
                   {filteredClients.map((client) => {
                     const lastActivity = getLastActivity(client)
                     const hasNutritionPlan = client.nutritionPlan.length > 0
-                    const hasTrainingPlan = client.trainingPlan.length > 0
+                    const hasTrainingPlan = client._count.clientMesocycles > 0
 
                     return (
                       <tr key={client.id} className="hover:bg-gray-50">

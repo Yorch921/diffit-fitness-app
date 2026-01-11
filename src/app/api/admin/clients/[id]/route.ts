@@ -106,14 +106,11 @@ export async function GET(
         nutritionPlan: {
           orderBy: { createdAt: 'desc' },
         },
-        trainingPlan: {
+        clientMesocycles: {
           orderBy: { createdAt: 'desc' },
         },
         weightEntry: {
           orderBy: { date: 'desc' },
-        },
-        workoutSessions: {
-          orderBy: { completedAt: 'desc' },
         },
         bodyMeasurements: {
           orderBy: { date: 'desc' },

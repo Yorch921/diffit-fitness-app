@@ -74,13 +74,6 @@ export default async function AdminPage() {
                 },
               },
             },
-            {
-              workoutSessions: {
-                none: {
-                  completedAt: { gte: fourteenDaysAgo },
-                },
-              },
-            },
           ],
         }
       : {
@@ -91,13 +84,6 @@ export default async function AdminPage() {
               weightEntry: {
                 none: {
                   date: { gte: fourteenDaysAgo },
-                },
-              },
-            },
-            {
-              workoutSessions: {
-                none: {
-                  completedAt: { gte: fourteenDaysAgo },
                 },
               },
             },
@@ -144,9 +130,16 @@ export default async function AdminPage() {
         orderBy: { date: 'desc' },
         take: 1,
       },
-      workoutSessions: {
-        orderBy: { completedAt: 'desc' },
+      clientMesocycles: {
+        where: { isActive: true },
         take: 1,
+        include: {
+          _count: {
+            select: {
+              microcycles: true,
+            },
+          },
+        },
       },
     },
     take: 5,
@@ -287,10 +280,7 @@ export default async function AdminPage() {
                 <div className="space-y-3">
                   {recentActivity.map((client) => {
                     const lastWeight = client.weightEntry[0]
-                    const lastWorkout = client.workoutSessions[0]
-                    const lastActivity = lastWeight || lastWorkout
-
-                    if (!lastActivity) return null
+                    const activeMesocycle = client.clientMesocycles[0]
 
                     return (
                       <Link
@@ -307,10 +297,13 @@ export default async function AdminPage() {
                                   Peso registrado: {lastWeight.weight} kg • {formatDate(lastWeight.date.toISOString())}
                                 </span>
                               )}
-                              {!lastWeight && lastWorkout && (
+                              {!lastWeight && activeMesocycle && (
                                 <span>
-                                  Entrenamiento completado • {formatDate(lastWorkout.completedAt.toISOString())}
+                                  Mesociclo activo • {activeMesocycle._count.microcycles} semanas
                                 </span>
+                              )}
+                              {!lastWeight && !activeMesocycle && (
+                                <span className="text-gray-400">Sin actividad reciente</span>
                               )}
                             </p>
                           </div>
