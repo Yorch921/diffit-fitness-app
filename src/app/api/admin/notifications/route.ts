@@ -58,31 +58,29 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session) {
+    if (!session || session.user.role === 'CLIENT') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Si es trainer, obtener notificaciones de sus clientes
-    if (session.user.role !== 'CLIENT') {
-      const notifications = await prisma.notification.findMany({
-        where: {
-          user: {
-            trainerId: session.user.id,
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      })
-
-      return NextResponse.json(notifications)
-    }
-
-    // Si es cliente, obtener sus propias notificaciones
+    // Si es admin/trainer, obtener TODAS las notificaciones del sistema
+    // con información del cliente destinatario
     const notifications = await prisma.notification.findMany({
       where: {
-        userId: session.user.id,
+        user: {
+          role: 'CLIENT',
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
+      take: 100, // Limitar a las últimas 100 notificaciones
     })
 
     return NextResponse.json(notifications)
