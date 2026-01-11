@@ -178,7 +178,7 @@ model Exercise {
   name            String
   description     String?   // Explicación técnica de ejecución
   videoUrl        String?   // Enlace a vídeo
-  targetSets      String?   // Series objetivo (ej: "3 x 12-10-8")
+  targetSets      String?   // Series objetivo (ej: "3 x 12-10-8") - DEPRECATED, usar 'sets'
   trainerComment  String?   // Comentario del entrenador
   order           Int
   createdAt       DateTime  @default(now())
@@ -188,8 +188,25 @@ model Exercise {
   sessionId       String
   exerciseData    ExerciseData[]
   clientWorkoutLogs ClientWorkoutLog[]
+  sets            ExerciseSet[] // Series estructuradas (nuevo)
 
   @@index([sessionId])
+}
+
+// Series estructuradas del plan del entrenador
+model ExerciseSet {
+  id              String    @id @default(cuid())
+  exerciseId      String
+  setNumber       Int       // Número de serie (1, 2, 3...)
+  minReps         Int       // Reps mínimas del rango
+  maxReps         Int       // Reps máximas del rango
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  exercise        Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, setNumber])
+  @@index([exerciseId])
 }
 
 // Datos de un ejercicio en una sesión completada

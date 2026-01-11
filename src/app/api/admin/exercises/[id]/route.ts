@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// Agregar ejercicio a una sesión (SOLO ENTRENADOR)
-export async function POST(
+// PUT - Editar ejercicio completo
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -16,15 +16,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const {
-      name,
-      description,
-      videoUrl,
-      targetSets,
-      trainerComment,
-      order,
-      sets,
-    } = body
+    const { name, description, videoUrl, trainerComment, sets, targetSets } = body
 
     // Validaciones
     if (!name || name.trim() === '') {
@@ -39,46 +31,23 @@ export async function POST(
       return NextResponse.json({ error: 'El comentario del entrenador es obligatorio' }, { status: 400 })
     }
 
-    // Si se envían sets estructurados, validar
     if (sets && (!Array.isArray(sets) || sets.length === 0)) {
       return NextResponse.json({ error: 'Debe definir al menos una serie' }, { status: 400 })
     }
 
-    // Verificar que la sesión existe y pertenece a un plan del trainer
-    const trainingSession = await prisma.trainingSession.findFirst({
-      where: {
-        id: params.id,
-      },
-      include: {
-        week: {
-          include: {
-            trainingPlan: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
-    })
-
-    if (!trainingSession) {
-      return NextResponse.json({ error: 'Sesión no encontrada' }, { status: 404 })
-    }
-
-    // Crear el ejercicio (PLAN DEL ENTRENADOR)
-    const exercise = await prisma.exercise.create({
+    // Actualizar ejercicio y reemplazar series
+    const exercise = await prisma.exercise.update({
+      where: { id: params.id },
       data: {
-        sessionId: params.id,
         name,
-        description, // Explicación técnica (OBLIGATORIO)
-        videoUrl, // Enlace a vídeo (opcional)
-        targetSets, // Series objetivo (DEPRECATED - mantener por compatibilidad)
-        trainerComment, // Comentario del entrenador (OBLIGATORIO)
-        order: order || 1,
-        // Crear series estructuradas si se envían
+        description,
+        videoUrl,
+        trainerComment,
+        targetSets, // Mantener por compatibilidad
+        // Reemplazar series estructuradas si se envían
         ...(sets && sets.length > 0 && {
           sets: {
+            deleteMany: {}, // Eliminar series existentes
             create: sets.map((set: any, index: number) => ({
               setNumber: index + 1,
               minReps: set.minReps || 8,
@@ -98,47 +67,36 @@ export async function POST(
 
     return NextResponse.json(exercise)
   } catch (error) {
-    console.error('Error creating exercise:', error)
+    console.error('Error updating exercise:', error)
     return NextResponse.json(
-      { error: 'Error al crear ejercicio' },
+      { error: 'Error al actualizar ejercicio' },
       { status: 500 }
     )
   }
 }
 
-// Obtener ejercicios de una sesión
-export async function GET(
+// DELETE - Eliminar ejercicio
+export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session) {
+    if (!session || session.user.role === 'CLIENT') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const exercises = await prisma.exercise.findMany({
-      where: {
-        sessionId: params.id,
-      },
-      include: {
-        sets: {
-          orderBy: {
-            setNumber: 'asc',
-          },
-        },
-      },
-      orderBy: {
-        order: 'asc',
-      },
+    // Eliminar ejercicio (las series se eliminan automáticamente por cascada)
+    await prisma.exercise.delete({
+      where: { id: params.id },
     })
 
-    return NextResponse.json(exercises)
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error fetching exercises:', error)
+    console.error('Error deleting exercise:', error)
     return NextResponse.json(
-      { error: 'Error al obtener ejercicios' },
+      { error: 'Error al eliminar ejercicio' },
       { status: 500 }
     )
   }
