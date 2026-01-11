@@ -74,9 +74,13 @@ export default function NotificationsPage() {
       const response = await fetch('/api/admin/notifications')
       const data = await response.json()
 
+      console.log('API Response:', response.status, data)
+
       if (Array.isArray(data)) {
+        console.log('Notificaciones cargadas:', data.length)
         setNotifications(data)
       } else {
+        console.error('La respuesta no es un array:', data)
         setNotifications([])
       }
     } catch (error) {
@@ -122,18 +126,21 @@ export default function NotificationsPage() {
         })
       }
 
+      console.log('Notificación enviada correctamente')
       alert('Notificación enviada correctamente')
-      setNotificationType(null)
+
+      // Resetear formulario
       setFormData({
         userId: '',
         title: '',
         message: '',
         scheduledFor: '',
       })
-      // Recargar historial si está en esa vista
-      if (viewMode === 'history') {
-        fetchNotifications()
-      }
+      setNotificationType(null)
+
+      // Cambiar a vista de historial y recargar
+      setViewMode('history')
+      // El useEffect se encargará de cargar las notificaciones
     } catch (error) {
       alert('Error al enviar notificación')
     } finally {

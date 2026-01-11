@@ -7,7 +7,13 @@
       "Bash(npm run db:seed-users:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Mejoras completas del panel de administración y sistema de notificaciones\n\n- Todos los admins ahora ven todos los clientes \\(no solo los asignados\\)\n- Añadida columna de entrenador asignado en tabla de clientes\n- Filtros avanzados en gestión de clientes: plan, antigüedad, última actividad\n- Rediseño completo de página de notificaciones con botones grandes e intuitivos\n- Tres tipos de notificaciones: Individual, Masivo, Programado\n- Sistema de perfiles de usuario en headers \\(admin y cliente\\)\n- Añadida funcionalidad de cierre de sesión\n- Componente SessionProvider para autenticación\n- Páginas de configuración para admin y cliente\n- Sistema de notificaciones para clientes\n- Navegación mejorada sin botones redundantes\n- Script de seed con 5 usuarios de prueba \\(2 trainers, 3 clientes\\)\n- Login con redirección automática según rol\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Mejoras en sistema de notificaciones y historial completo\n\n- Mejora en consulta de notificaciones para incluir mensajes programados\n- Página de notificaciones del cliente completamente rediseñada\n- Estadísticas visuales: Total, Sin leer, Leídas\n- Filtros por estado: Todas, No leídas, Leídas\n- Botón para marcar todas como leídas\n- Indicador visual animado para mensajes no leídos\n- Contador de mensajes mostrados\n- Mejor organización y UI mejorada\n- Historial completo de todos los mensajes recibidos\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Mejoras en sistema de notificaciones y historial completo\n\n- Mejora en consulta de notificaciones para incluir mensajes programados\n- Página de notificaciones del cliente completamente rediseñada\n- Estadísticas visuales: Total, Sin leer, Leídas\n- Filtros por estado: Todas, No leídas, Leídas\n- Botón para marcar todas como leídas\n- Indicador visual animado para mensajes no leídos\n- Contador de mensajes mostrados\n- Mejor organización y UI mejorada\n- Historial completo de todos los mensajes recibidos\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(curl:*)",
+      "Bash(npm run db:studio:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }
