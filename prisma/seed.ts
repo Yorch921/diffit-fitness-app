@@ -6,7 +6,37 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding database...')
 
-  // Crear entrenador
+  // ============================================================================
+  // TRAINERS / ADMINISTRADORES
+  // ============================================================================
+
+  // Marta - Nutricionista
+  const marta = await prisma.user.upsert({
+    where: { email: 'marta@diffit.com' },
+    update: {},
+    create: {
+      email: 'marta@diffit.com',
+      name: 'Marta',
+      password: await hash('marta123', 10),
+      role: 'TRAINER',
+    },
+  })
+  console.log('✅ Trainer created:', marta.email)
+
+  // Adri - Entrenador Personal
+  const adri = await prisma.user.upsert({
+    where: { email: 'adri@diffit.com' },
+    update: {},
+    create: {
+      email: 'adri@diffit.com',
+      name: 'Adri',
+      password: await hash('adri123', 10),
+      role: 'TRAINER',
+    },
+  })
+  console.log('✅ Trainer created:', adri.email)
+
+  // Trainer Demo (original)
   const trainer = await prisma.user.upsert({
     where: { email: 'trainer@diffit.com' },
     update: {},
@@ -17,10 +47,70 @@ async function main() {
       role: 'TRAINER',
     },
   })
-
   console.log('✅ Trainer created:', trainer.email)
 
-  // Crear cliente de prueba
+  // ============================================================================
+  // CLIENTES
+  // ============================================================================
+
+  // Jorge - Solo Nutrición (Cliente de Marta)
+  const jorge = await prisma.user.upsert({
+    where: { email: 'jorge@diffit.com' },
+    update: {},
+    create: {
+      email: 'jorge@diffit.com',
+      name: 'Jorge',
+      password: await hash('jorge123', 10),
+      role: 'CLIENT',
+      trainerId: marta.id,
+      age: 32,
+      gender: 'MALE',
+      height: 178,
+      initialWeight: 85.0,
+      goal: 'Pérdida de grasa manteniendo masa muscular',
+    },
+  })
+  console.log('✅ Client created:', jorge.email)
+
+  // Miguel - Solo Entrenamiento (Cliente de Adri)
+  const miguel = await prisma.user.upsert({
+    where: { email: 'miguel@diffit.com' },
+    update: {},
+    create: {
+      email: 'miguel@diffit.com',
+      name: 'Miguel',
+      password: await hash('miguel123', 10),
+      role: 'CLIENT',
+      trainerId: adri.id,
+      age: 28,
+      gender: 'MALE',
+      height: 182,
+      initialWeight: 75.0,
+      goal: 'Ganancia de fuerza y masa muscular',
+    },
+  })
+  console.log('✅ Client created:', miguel.email)
+
+  // Rafa - Nutrición + Entrenamiento (Cliente de Marta)
+  const rafa = await prisma.user.upsert({
+    where: { email: 'rafa@diffit.com' },
+    update: {},
+    create: {
+      email: 'rafa@diffit.com',
+      name: 'Rafa',
+      password: await hash('rafa123', 10),
+      role: 'CLIENT',
+      trainerId: marta.id,
+      age: 35,
+      gender: 'MALE',
+      height: 175,
+      initialWeight: 90.0,
+      goal: 'Recomposición corporal y mejora de salud',
+    },
+  })
+  console.log('✅ Client created:', rafa.email)
+
+  // Cliente Demo (original)
   const client = await prisma.user.upsert({
     where: { email: 'cliente@diffit.com' },
     update: {},
@@ -32,28 +122,122 @@ async function main() {
       trainerId: trainer.id,
     },
   })
-
   console.log('✅ Client created:', client.email)
 
   // ============================================================================
-  // NUEVO SISTEMA: TEMPLATES Y MESOCICLOS
+  // PLANES NUTRICIONALES
   // ============================================================================
 
-  // Crear template de entrenamiento (semana tipo)
-  const template = await prisma.trainingTemplate.create({
+  // Plan nutricional para Jorge
+  await prisma.nutritionPlan.create({
+    data: {
+      title: 'Plan Nutricional Jorge - Déficit Calórico',
+      description: 'Plan enfocado en pérdida de grasa con alto contenido proteico',
+      pdfUrl: '/uploads/plan-jorge.pdf',
+      startDate: new Date('2026-01-01'),
+      userId: jorge.id,
+      isActive: true,
+      calories: 2200,
+      protein: 180,
+      carbs: 200,
+      fats: 70,
+    },
+  })
+  console.log('✅ Nutrition plan created for Jorge')
+
+  // Plan nutricional para Rafa
+  await prisma.nutritionPlan.create({
+    data: {
+      title: 'Plan Nutricional Rafa - Recomposición',
+      description: 'Plan balanceado para recomposición corporal',
+      pdfUrl: '/uploads/plan-rafa.pdf',
+      startDate: new Date('2026-01-01'),
+      userId: rafa.id,
+      isActive: true,
+      calories: 2400,
+      protein: 170,
+      carbs: 220,
+      fats: 80,
+    },
+  })
+  console.log('✅ Nutrition plan created for Rafa')
+
+  // Plan nutricional para cliente demo
+  await prisma.nutritionPlan.create({
+    data: {
+      title: 'Plan Nutricional - Enero 2026',
+      description: 'Plan de alimentación personalizado',
+      pdfUrl: '/uploads/plan-nutricional-ejemplo.pdf',
+      startDate: new Date('2026-01-01'),
+      userId: client.id,
+      isActive: true,
+    },
+  })
+  console.log('✅ Nutrition plan created for demo client')
+
+  // ============================================================================
+  // REGISTROS DE PESO
+  // ============================================================================
+
+  // Registros de peso para Jorge (tendencia a la baja)
+  const jorgeWeights = [85.0, 84.5, 84.2, 83.8, 83.5, 83.1, 82.8]
+  for (let i = 0; i < jorgeWeights.length; i++) {
+    await prisma.weightEntry.create({
+      data: {
+        weight: jorgeWeights[i],
+        date: new Date(2026, 0, (i + 1) * 2),
+        userId: jorge.id,
+        notes: i === 0 ? 'Peso inicial' : undefined,
+      },
+    })
+  }
+  console.log('✅ Weight entries created for Jorge')
+
+  // Registros de peso para Rafa (tendencia a la baja)
+  const rafaWeights = [90.0, 89.6, 89.2, 88.9, 88.5, 88.2, 87.9]
+  for (let i = 0; i < rafaWeights.length; i++) {
+    await prisma.weightEntry.create({
+      data: {
+        weight: rafaWeights[i],
+        date: new Date(2026, 0, (i + 1) * 2),
+        userId: rafa.id,
+        notes: i === 0 ? 'Peso inicial' : undefined,
+      },
+    })
+  }
+  console.log('✅ Weight entries created for Rafa')
+
+  // Registros de peso para cliente demo
+  const demoWeights = [80.5, 80.2, 79.8, 79.5, 79.3, 79.0, 78.8]
+  for (let i = 0; i < demoWeights.length; i++) {
+    await prisma.weightEntry.create({
+      data: {
+        weight: demoWeights[i],
+        date: new Date(2026, 0, (i + 1) * 2),
+        userId: client.id,
+      },
+    })
+  }
+  console.log('✅ Weight entries created for demo client')
+
+  // ============================================================================
+  // TEMPLATES DE ENTRENAMIENTO
+  // ============================================================================
+
+  // Template 1: Fuerza General 5 Días (Adri)
+  const template5Days = await prisma.trainingTemplate.create({
     data: {
       title: 'Fuerza General - 5 Días',
       description: 'Plan de entrenamiento de fuerza para desarrollo muscular general',
       numberOfDays: 5,
-      trainerId: trainer.id,
+      trainerId: adri.id,
       trainerNotes: 'Enfoque en compuestos básicos con progresión lineal',
     },
   })
+  console.log('✅ Training template created: Fuerza General 5 Días')
 
-  console.log('✅ Training template created')
-
-  // Definir estructura de días
-  const daysStructure = [
+  // Estructura de días para template de 5 días
+  const days5Structure = [
     {
       dayNumber: 1,
       name: 'Día 1 - Pecho y Tríceps',
@@ -111,11 +295,11 @@ async function main() {
     },
   ]
 
-  // Crear días y ejercicios del template
-  for (const dayData of daysStructure) {
+  // Crear días y ejercicios para template de 5 días
+  for (const dayData of days5Structure) {
     const templateDay = await prisma.templateDay.create({
       data: {
-        templateId: template.id,
+        templateId: template5Days.id,
         dayNumber: dayData.dayNumber,
         name: dayData.name,
         description: dayData.description,
@@ -134,7 +318,6 @@ async function main() {
         },
       })
 
-      // Crear series estructuradas
       for (const setData of exerciseData.sets) {
         await prisma.exerciseSet.create({
           data: {
@@ -148,71 +331,219 @@ async function main() {
       }
     }
   }
+  console.log('✅ Template days and exercises created for 5-day template')
 
-  console.log('✅ Template days and exercises created')
+  // Template 2: Hipertrofia 4 Días (Marta)
+  const template4Days = await prisma.trainingTemplate.create({
+    data: {
+      title: 'Hipertrofia - 4 Días',
+      description: 'Plan de hipertrofia muscular con volumen moderado-alto',
+      numberOfDays: 4,
+      trainerId: marta.id,
+      trainerNotes: 'Enfoque en hipertrofia con rangos de 8-12 reps',
+    },
+  })
+  console.log('✅ Training template created: Hipertrofia 4 Días')
 
-  // Crear mesociclo activo para el cliente (20 semanas)
-  const startDate = new Date('2026-01-06') // Lunes de esta semana
-  const durationWeeks = 20
-  const endDate = new Date(startDate)
-  endDate.setDate(endDate.getDate() + durationWeeks * 7 - 1)
+  // Estructura simplificada para template de 4 días
+  const days4Structure = [
+    {
+      dayNumber: 1,
+      name: 'Día 1 - Tren Superior A',
+      exercises: [
+        { name: 'Press de Banca', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Remo con Barra', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Press Militar', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+      ],
+    },
+    {
+      dayNumber: 2,
+      name: 'Día 2 - Tren Inferior A',
+      exercises: [
+        { name: 'Sentadilla', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 180 }] },
+        { name: 'Peso Muerto Rumano', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
+        { name: 'Curl Femoral', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 90 }] },
+      ],
+    },
+    {
+      dayNumber: 3,
+      name: 'Día 3 - Tren Superior B',
+      exercises: [
+        { name: 'Press Inclinado', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Dominadas', sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 120 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 120 }] },
+        { name: 'Elevaciones Laterales', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 60 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 60 }] },
+      ],
+    },
+    {
+      dayNumber: 4,
+      name: 'Día 4 - Tren Inferior B',
+      exercises: [
+        { name: 'Prensa de Pierna', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
+        { name: 'Zancadas', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Extensiones de Cuádriceps', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 60 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 60 }] },
+      ],
+    },
+  ]
 
-  const mesocycle = await prisma.clientMesocycle.create({
+  // Crear días y ejercicios para template de 4 días
+  for (const dayData of days4Structure) {
+    const templateDay = await prisma.templateDay.create({
+      data: {
+        templateId: template4Days.id,
+        dayNumber: dayData.dayNumber,
+        name: dayData.name,
+        order: dayData.dayNumber,
+      },
+    })
+
+    for (let i = 0; i < dayData.exercises.length; i++) {
+      const exerciseData = dayData.exercises[i]
+      const exercise = await prisma.exercise.create({
+        data: {
+          templateDayId: templateDay.id,
+          name: exerciseData.name,
+          order: i + 1,
+        },
+      })
+
+      for (const setData of exerciseData.sets) {
+        await prisma.exerciseSet.create({
+          data: {
+            exerciseId: exercise.id,
+            setNumber: setData.setNumber,
+            minReps: setData.minReps,
+            maxReps: setData.maxReps,
+            restSeconds: setData.restSeconds,
+          },
+        })
+      }
+    }
+  }
+  console.log('✅ Template days and exercises created for 4-day template')
+
+  // ============================================================================
+  // MESOCICLOS Y REGISTROS
+  // ============================================================================
+
+  // Mesociclo para Miguel (4 semanas con template de 5 días)
+  const miguelStartDate = new Date('2026-01-06')
+  const miguelMeso = await prisma.clientMesocycle.create({
+    data: {
+      clientId: miguel.id,
+      templateId: template5Days.id,
+      trainerId: adri.id,
+      startDate: miguelStartDate,
+      durationWeeks: 4,
+      endDate: new Date(new Date(miguelStartDate).setDate(miguelStartDate.getDate() + 4 * 7 - 1)),
+      isActive: true,
+      trainerNotes: 'Primer mesociclo de Miguel, enfoque en técnica',
+    },
+  })
+
+  // Crear 4 microciclos para Miguel
+  for (let weekNum = 1; weekNum <= 4; weekNum++) {
+    const microStart = new Date(miguelStartDate)
+    microStart.setDate(microStart.getDate() + (weekNum - 1) * 7)
+    const microEnd = new Date(microStart)
+    microEnd.setDate(microEnd.getDate() + 6)
+
+    await prisma.microcycle.create({
+      data: {
+        mesocycleId: miguelMeso.id,
+        weekNumber: weekNum,
+        startDate: microStart,
+        endDate: microEnd,
+      },
+    })
+  }
+  console.log('✅ Mesocycle created for Miguel (4 weeks)')
+
+  // Mesociclo para Rafa (con template de 4 días de Marta)
+  const rafaStartDate = new Date('2026-01-06')
+  const rafaMeso = await prisma.clientMesocycle.create({
+    data: {
+      clientId: rafa.id,
+      templateId: template4Days.id,
+      trainerId: marta.id,
+      startDate: rafaStartDate,
+      durationWeeks: 8,
+      endDate: new Date(new Date(rafaStartDate).setDate(rafaStartDate.getDate() + 8 * 7 - 1)),
+      isActive: true,
+      trainerNotes: 'Plan combinado con nutrición para recomposición',
+    },
+  })
+
+  // Crear 8 microciclos para Rafa
+  for (let weekNum = 1; weekNum <= 8; weekNum++) {
+    const microStart = new Date(rafaStartDate)
+    microStart.setDate(microStart.getDate() + (weekNum - 1) * 7)
+    const microEnd = new Date(microStart)
+    microEnd.setDate(microEnd.getDate() + 6)
+
+    await prisma.microcycle.create({
+      data: {
+        mesocycleId: rafaMeso.id,
+        weekNumber: weekNum,
+        startDate: microStart,
+        endDate: microEnd,
+      },
+    })
+  }
+  console.log('✅ Mesocycle created for Rafa (8 weeks)')
+
+  // Mesociclo para cliente demo (20 semanas)
+  const demoStartDate = new Date('2026-01-06')
+  const demoMeso = await prisma.clientMesocycle.create({
     data: {
       clientId: client.id,
-      templateId: template.id,
+      templateId: template5Days.id,
       trainerId: trainer.id,
-      startDate,
-      durationWeeks,
-      endDate,
+      startDate: demoStartDate,
+      durationWeeks: 20,
+      endDate: new Date(new Date(demoStartDate).setDate(demoStartDate.getDate() + 20 * 7 - 1)),
       isActive: true,
       trainerNotes: 'Primer mesociclo del cliente, enfoque en aprender técnica correcta',
     },
   })
 
-  console.log('✅ Client mesocycle created')
-
-  // Crear 20 microciclos
-  for (let weekNum = 1; weekNum <= durationWeeks; weekNum++) {
-    const microcycleStartDate = new Date(startDate)
-    microcycleStartDate.setDate(microcycleStartDate.getDate() + (weekNum - 1) * 7)
-
-    const microcycleEndDate = new Date(microcycleStartDate)
-    microcycleEndDate.setDate(microcycleEndDate.getDate() + 6)
+  // Crear 20 microciclos para demo
+  for (let weekNum = 1; weekNum <= 20; weekNum++) {
+    const microStart = new Date(demoStartDate)
+    microStart.setDate(microStart.getDate() + (weekNum - 1) * 7)
+    const microEnd = new Date(microStart)
+    microEnd.setDate(microEnd.getDate() + 6)
 
     await prisma.microcycle.create({
       data: {
-        mesocycleId: mesocycle.id,
+        mesocycleId: demoMeso.id,
         weekNumber: weekNum,
-        startDate: microcycleStartDate,
-        endDate: microcycleEndDate,
+        startDate: microStart,
+        endDate: microEnd,
       },
     })
   }
+  console.log('✅ Mesocycle created for demo client (20 weeks)')
 
-  console.log('✅ Microcycles created (20 weeks)')
-
-  // Crear algunos registros de entrenamiento de ejemplo (semana 1)
-  const firstMicrocycle = await prisma.microcycle.findFirst({
-    where: { mesocycleId: mesocycle.id, weekNumber: 1 },
+  // Crear algunos logs de ejemplo para la semana 1 del cliente demo
+  const firstMicro = await prisma.microcycle.findFirst({
+    where: { mesocycleId: demoMeso.id, weekNumber: 1 },
   })
 
-  if (firstMicrocycle) {
+  if (firstMicro) {
     const templateDays = await prisma.templateDay.findMany({
-      where: { templateId: template.id },
+      where: { templateId: template5Days.id },
       include: { exercises: { include: { sets: true } } },
       orderBy: { dayNumber: 'asc' },
     })
 
-    // Registrar los primeros 3 días de la semana 1
     for (let dayIndex = 0; dayIndex < 3; dayIndex++) {
       const templateDay = templateDays[dayIndex]
-      const workoutDate = new Date(firstMicrocycle.startDate)
+      const workoutDate = new Date(firstMicro.startDate)
       workoutDate.setDate(workoutDate.getDate() + dayIndex)
 
-      const workoutDayLog = await prisma.workoutDayLog.create({
+      const workoutLog = await prisma.workoutDayLog.create({
         data: {
-          microcycleId: firstMicrocycle.id,
+          microcycleId: firstMicro.id,
           templateDayId: templateDay.id,
           completedDate: workoutDate,
           durationMinutes: 60 + Math.floor(Math.random() * 20),
@@ -223,72 +554,54 @@ async function main() {
         },
       })
 
-      // Registrar ejercicios
       for (const exercise of templateDay.exercises) {
         const exerciseLog = await prisma.exerciseLog.create({
           data: {
-            workoutDayLogId: workoutDayLog.id,
+            workoutDayLogId: workoutLog.id,
             exerciseId: exercise.id,
           },
         })
 
-        // Registrar series con pesos y reps de ejemplo
         for (const set of exercise.sets) {
           await prisma.setLog.create({
             data: {
               exerciseLogId: exerciseLog.id,
               setNumber: set.setNumber,
               reps: set.minReps + Math.floor(Math.random() * (set.maxReps - set.minReps + 1)),
-              weight: 40 + Math.random() * 60, // Peso aleatorio entre 40-100kg
+              weight: 40 + Math.random() * 60,
               rir: 1 + Math.floor(Math.random() * 3),
             },
           })
         }
       }
     }
-
-    console.log('✅ Sample workout logs created for week 1 (first 3 days)')
+    console.log('✅ Sample workout logs created for demo client (week 1)')
   }
 
-  // Crear plan nutricional
-  await prisma.nutritionPlan.create({
-    data: {
-      title: 'Plan Nutricional - Enero 2026',
-      description: 'Plan de alimentación personalizado',
-      pdfUrl: '/uploads/plan-nutricional-ejemplo.pdf',
-      startDate: new Date('2026-01-01'),
-      userId: client.id,
-      isActive: true,
-    },
-  })
+  // ============================================================================
+  // RESUMEN FINAL
+  // ============================================================================
 
-  console.log('✅ Nutrition plan created')
-
-  // Crear algunas entradas de peso
-  const weights = [80.5, 80.2, 79.8, 79.5, 79.3, 79.0, 78.8]
-  for (let i = 0; i < weights.length; i++) {
-    await prisma.weightEntry.create({
-      data: {
-        weight: weights[i],
-        date: new Date(2026, 0, (i + 1) * 2),
-        userId: client.id,
-      },
-    })
-  }
-
-  console.log('✅ Weight entries created')
-
+  console.log('')
   console.log('✨ Seeding completed!')
   console.log('')
-  console.log('📝 Login credentials:')
-  console.log('   Trainer: trainer@diffit.com / password123')
-  console.log('   Client: cliente@diffit.com / password123')
+  console.log('👥 TRAINERS:')
+  console.log('   Marta (Nutricionista): marta@diffit.com / marta123')
+  console.log('   Adri (Entrenador): adri@diffit.com / adri123')
+  console.log('   Trainer Demo: trainer@diffit.com / password123')
   console.log('')
-  console.log('📊 Data created:')
-  console.log('   - 1 Training Template (5 días)')
-  console.log('   - 1 Active Mesocycle (20 semanas)')
-  console.log('   - 20 Microcycles')
-  console.log('   - 3 Workout Day Logs (semana 1, primeros 3 días)')
+  console.log('👤 CLIENTS:')
+  console.log('   Jorge (Solo Nutrición): jorge@diffit.com / jorge123')
+  console.log('   Miguel (Solo Entrenamiento): miguel@diffit.com / miguel123')
+  console.log('   Rafa (Nutrición + Entrenamiento): rafa@diffit.com / rafa123')
+  console.log('   Cliente Demo: cliente@diffit.com / password123')
+  console.log('')
+  console.log('📊 DATA CREATED:')
+  console.log('   - 2 Training Templates (5 días y 4 días)')
+  console.log('   - 3 Active Mesocycles (Miguel: 4 weeks, Rafa: 8 weeks, Demo: 20 weeks)')
+  console.log('   - 3 Nutrition Plans (Jorge, Rafa, Demo)')
+  console.log('   - Weight entries for Jorge, Rafa, and Demo')
+  console.log('   - Sample workout logs for Demo client')
 }
 
 main()
