@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { formatDate, formatWeight } from '@/lib/utils'
 import ClientProgressCharts from '@/components/ClientProgressCharts'
 import MesocycleAssignModal from '@/components/MesocycleAssignModal'
+import TrainingProgressTab from '@/components/TrainingProgressTab'
 
 type TabType = 'general' | 'nutrition' | 'training' | 'progress'
 
@@ -473,12 +474,7 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
           {/* Plan Activo */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Plan de Entrenamiento Actual</CardTitle>
-                <Link href="/admin/training-templates">
-                  <Button size="sm">+ Asignar Plan desde Plantilla</Button>
-                </Link>
-              </div>
+              <CardTitle>Plan de Entrenamiento Actual</CardTitle>
             </CardHeader>
             <CardContent>
               {activeTraining ? (
@@ -517,8 +513,8 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
                     </div>
                   )}
                   <div className="flex gap-2">
-                    <Link href={`/admin/training-templates/${activeTraining.template.id}`}>
-                      <Button variant="outline">Ver Plantilla</Button>
+                    <Link href={`/admin/mesocycles/${activeTraining.id}`}>
+                      <Button variant="outline">Ver Plan de Entrenamiento</Button>
                     </Link>
                     <Button
                       variant="outline"
@@ -536,53 +532,93 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
                 <div>
                   <p className="text-gray-500 mb-4">No tiene plan de entrenamiento activo</p>
                   <Button onClick={() => setShowAssignModal(true)}>
-                    Asignar Plan desde Plantilla
+                    Asignar Plan
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Últimos Entrenamientos */}
-          {activeTraining && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Progreso del Mesociclo Actual</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activeTraining.microcycles.length === 0 ? (
-                  <p className="text-gray-500">No hay microciclos registrados</p>
-                ) : (
+          {/* Progreso del Mesociclo Actual */}
+          {activeTraining && (() => {
+            // Filtrar solo microciclos que tienen al menos 1 workout log (semanas iniciadas)
+            const startedWeeks = activeTraining.microcycles.filter(
+              (micro: any) => micro._count?.workoutDayLogs > 0
+            )
+
+            // Determinar semana activa (la más reciente con logs, o la que está en su rango de fechas)
+            const now = new Date()
+            const activeWeek = startedWeeks.find((micro: any) => {
+              const start = new Date(micro.startDate)
+              const end = new Date(micro.endDate)
+              return now >= start && now <= end
+            }) || startedWeeks[startedWeeks.length - 1] // Si no hay semana en rango, usar la más reciente iniciada
+
+            return startedWeeks.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Progreso del Mesociclo Actual</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-3">
-                    {activeTraining.microcycles.slice(0, 5).map((micro: any) => (
-                      <div key={micro.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">Semana {micro.weekNumber}</h4>
-                          <p className="text-sm text-gray-600">
-                            {formatDate(micro.startDate)} - {formatDate(micro.endDate)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium">
-                            {micro._count?.workoutDayLogs || 0} /{' '}
-                            {activeTraining.template.numberOfDays} días
+                    {startedWeeks.map((micro: any) => {
+                      const isActive = activeWeek?.id === micro.id
+                      const completedDays = micro._count?.workoutDayLogs || 0
+                      const totalDays = activeTraining.template.numberOfDays
+                      const progressPercent = Math.round((completedDays / totalDays) * 100)
+
+                      return (
+                        <Link
+                          key={micro.id}
+                          href={`/admin/microcycles/${micro.id}`}
+                          className="block"
+                        >
+                          <div className={`flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${
+                            isActive ? 'border-blue-500 bg-blue-50' : ''
+                          }`}>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium">Semana {micro.weekNumber}</h4>
+                                {isActive && (
+                                  <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-semibold rounded-full">
+                                    Activa
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                {formatDate(micro.startDate)} - {formatDate(micro.endDate)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium">
+                                {completedDays} / {totalDays} días
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full ${isActive ? 'bg-blue-500' : 'bg-green-500'}`}
+                                    style={{ width: `${progressPercent}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-gray-500 min-w-[3ch]">
+                                  {progressPercent}%
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {Math.round(
-                              ((micro._count?.workoutDayLogs || 0) /
-                                activeTraining.template.numberOfDays) *
-                                100
-                            )}
-                            % completado
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                        </Link>
+                      )
+                    })}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  {startedWeeks.length === 0 && (
+                    <p className="text-gray-500 text-sm">
+                      El cliente aún no ha iniciado ninguna semana de entrenamiento
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null
+          })()}
 
           {/* Historial de Mesociclos */}
           {previousTraining.length > 0 && (
@@ -634,54 +670,7 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
       )}
 
       {activeTab === 'progress' && (
-        <div className="space-y-6">
-          {/* Gráfico de Peso */}
-          <ClientProgressCharts weightData={weightData} />
-
-          {/* Fotos de Progreso */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Fotos de Progreso</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {client.files.length === 0 ? (
-                <p className="text-gray-500">No hay fotos de progreso</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {client.files.map((file: any) => (
-                    <div key={file.id} className="border rounded-lg overflow-hidden">
-                      <img src={file.url} alt={file.name} className="w-full aspect-square object-cover" />
-                      <div className="p-2">
-                        <p className="text-xs text-gray-600">{formatDate(file.createdAt)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Comentarios del Nutricionista */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Comentarios y Seguimiento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {client.nutritionistComments.length === 0 ? (
-                <p className="text-gray-500">No hay comentarios registrados</p>
-              ) : (
-                <div className="space-y-3">
-                  {client.nutritionistComments.map((comment: any) => (
-                    <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-900">{comment.comment}</p>
-                      <p className="text-xs text-gray-500 mt-2">{formatDate(comment.createdAt)}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        <TrainingProgressTab clientId={client.id} />
       )}
     </div>
   )

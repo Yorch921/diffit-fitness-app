@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import TemplateCardActions from '@/components/TemplateCardActions'
 
 export default async function TrainingTemplatesPage() {
   const session = await getServerSession(authOptions)
@@ -112,18 +113,11 @@ export default async function TrainingTemplatesPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Link href={`/admin/training-templates/${template.id}`} className="flex-1">
-                      <Button variant="outline" className="w-full">
-                        Editar
-                      </Button>
-                    </Link>
-                    <Link href={`/admin/training-templates/${template.id}`} className="flex-1">
-                      <Button className="w-full">
-                        Ver Detalle
-                      </Button>
-                    </Link>
-                  </div>
+                  <TemplateCardActions
+                    templateId={template.id}
+                    templateTitle={template.title}
+                    hasAssignments={template._count.mesocycles > 0}
+                  />
                 </CardContent>
               </Card>
             )

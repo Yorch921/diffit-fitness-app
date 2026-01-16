@@ -11,6 +11,7 @@ const clientNavItems = [
   { href: '/dashboard', label: 'Inicio', icon: '🏠' },
   { href: '/dashboard/nutrition', label: 'Plan Nutricional', icon: '🥗' },
   { href: '/dashboard/training', label: 'Entrenamiento', icon: '💪' },
+  { href: '/dashboard/progress', label: 'Progreso', icon: '📈' },
   { href: '/dashboard/weight', label: 'Báscula', icon: '⚖️' },
   { href: '/dashboard/files', label: 'Archivos', icon: '📁' },
   { href: '/dashboard/notifications', label: 'Notificaciones', icon: '🔔' },

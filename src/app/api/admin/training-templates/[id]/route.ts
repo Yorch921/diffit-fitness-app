@@ -146,7 +146,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/training-templates/[id] - Archivar template
+// DELETE /api/admin/training-templates/[id] - Eliminar template
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -165,41 +165,40 @@ export async function DELETE(
         trainerId: session.user.id,
       },
       include: {
-        mesocycles: {
-          where: { isActive: true },
+        _count: {
+          select: { mesocycles: true },
         },
       },
     })
 
     if (!existingTemplate) {
       return NextResponse.json(
-        { error: 'Template not found' },
+        { error: 'Plantilla no encontrada' },
         { status: 404 }
       )
     }
 
-    // Verificar si hay mesociclos activos usando este template
-    if (existingTemplate.mesocycles.length > 0) {
+    // Verificar si tiene mesociclos asignados (activos o no)
+    if (existingTemplate._count.mesocycles > 0) {
       return NextResponse.json(
         {
           error:
-            'No se puede archivar este template porque tiene mesociclos activos asignados',
+            'No se puede eliminar una plantilla que tiene mesociclos asignados a clientes',
         },
         { status: 400 }
       )
     }
 
-    // Archivar (soft delete)
-    const template = await prisma.trainingTemplate.update({
+    // Eliminar permanentemente (esto eliminará en cascada días, ejercicios y sets)
+    await prisma.trainingTemplate.delete({
       where: { id: params.id },
-      data: { isArchived: true },
     })
 
-    return NextResponse.json(template)
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error archiving template:', error)
+    console.error('Error deleting template:', error)
     return NextResponse.json(
-      { error: 'Error archiving template' },
+      { error: 'Error al eliminar la plantilla' },
       { status: 500 }
     )
   }

@@ -8,18 +8,27 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import Link from 'next/link'
+import SortableDayList from '@/components/SortableDayList'
 
 interface TemplateEditorProps {
   template: any
+  hideHeader?: boolean
 }
 
-export default function TemplateEditor({ template }: TemplateEditorProps) {
+export default function TemplateEditor({ template, hideHeader = false }: TemplateEditorProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [editingBasicInfo, setEditingBasicInfo] = useState(false)
   const [addingDay, setAddingDay] = useState(false)
   const [addingExercise, setAddingExercise] = useState<string | null>(null)
+
+  // Edit states
+  const [editingDay, setEditingDay] = useState<string | null>(null)
+  const [editingExercise, setEditingExercise] = useState<string | null>(null)
+
+  // Local days state for drag & drop
+  const [localDays, setLocalDays] = useState(template.days)
 
   const [basicInfo, setBasicInfo] = useState({
     title: template.title,
@@ -34,6 +43,20 @@ export default function TemplateEditor({ template }: TemplateEditorProps) {
   })
 
   const [newExercise, setNewExercise] = useState({
+    name: '',
+    description: '',
+    videoUrl: '',
+    trainerComment: '',
+    sets: [{ setNumber: 1, minReps: 8, maxReps: 12, restSeconds: 90 }],
+  })
+
+  // Edit form states
+  const [editDayForm, setEditDayForm] = useState({
+    name: '',
+    description: '',
+  })
+
+  const [editExerciseForm, setEditExerciseForm] = useState({
     name: '',
     description: '',
     videoUrl: '',
@@ -168,39 +191,157 @@ export default function TemplateEditor({ template }: TemplateEditorProps) {
     })
   }
 
+  // Edit day handlers
+  const handleUpdateDay = async (dayId: string) => {
+    setError('')
+    setLoading(true)
+
+    try {
+      const response = await fetch(
+        `/api/admin/training-templates/${template.id}/days/${dayId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: editDayForm.name,
+            description: editDayForm.description,
+          }),
+        }
+      )
+
+      if (response.ok) {
+        setEditingDay(null)
+        router.refresh()
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Error al actualizar día')
+      }
+    } catch (error) {
+      setError('Error al actualizar día')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteDay = async (dayId: string) => {
+    if (!confirm('¿Seguro que quieres eliminar este día? Se eliminarán todos sus ejercicios.')) return
+
+    try {
+      const response = await fetch(
+        `/api/admin/training-templates/${template.id}/days/${dayId}`,
+        {
+          method: 'DELETE',
+        }
+      )
+
+      if (response.ok) {
+        router.refresh()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Error al eliminar día')
+      }
+    } catch (error) {
+      alert('Error al eliminar día')
+    }
+  }
+
+  // Edit exercise handlers
+  const handleUpdateExercise = async (exerciseId: string) => {
+    setError('')
+    setLoading(true)
+
+    try {
+      const response = await fetch(`/api/admin/exercises/${exerciseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editExerciseForm.name,
+          description: editExerciseForm.description,
+          videoUrl: editExerciseForm.videoUrl,
+          trainerComment: editExerciseForm.trainerComment,
+          sets: editExerciseForm.sets,
+        }),
+      })
+
+      if (response.ok) {
+        setEditingExercise(null)
+        router.refresh()
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Error al actualizar ejercicio')
+      }
+    } catch (error) {
+      setError('Error al actualizar ejercicio')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addSetToEditExercise = () => {
+    setEditExerciseForm({
+      ...editExerciseForm,
+      sets: [
+        ...editExerciseForm.sets,
+        {
+          setNumber: editExerciseForm.sets.length + 1,
+          minReps: 8,
+          maxReps: 12,
+          restSeconds: 90,
+        },
+      ],
+    })
+  }
+
+  const removeSetFromEditExercise = (index: number) => {
+    if (editExerciseForm.sets.length <= 1) {
+      alert('Debe haber al menos una serie')
+      return
+    }
+    const updatedSets = editExerciseForm.sets.filter((_, i) => i !== index)
+    const renumbered = updatedSets.map((set, idx) => ({
+      ...set,
+      setNumber: idx + 1,
+    }))
+    setEditExerciseForm({ ...editExerciseForm, sets: renumbered })
+  }
+
   return (
     <div className="px-4 py-6 sm:px-0">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <Link href="/admin/training-templates" className="text-blue-600 hover:underline text-sm mb-2 block">
-            ← Volver a Plantillas
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">{template.title}</h1>
-          <p className="mt-2 text-gray-600">
-            {template.numberOfDays} días por semana • {template.days.length} días configurados
-          </p>
-        </div>
-      </div>
+      {!hideHeader && (
+        <>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <Link href="/admin/training-templates" className="text-blue-600 hover:underline text-sm mb-2 block">
+                ← Volver a Plantillas
+              </Link>
+              <h1 className="text-3xl font-bold text-gray-900">{template.title}</h1>
+              <p className="mt-2 text-gray-600">
+                {template.numberOfDays} días por semana • {template.days.length} días configurados
+              </p>
+            </div>
+          </div>
+
+          {/* Active Mesocycles Warning */}
+          {template.mesocycles && template.mesocycles.length > 0 && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-900">
+                <strong>⚠️ Atención:</strong> Esta plantilla está asignada a {template.mesocycles.length} cliente(s) activos. Los cambios se reflejarán inmediatamente en sus planes.
+              </p>
+              <div className="mt-2 space-y-1">
+                {template.mesocycles.map((m: any) => (
+                  <p key={m.id} className="text-xs text-yellow-800">
+                    • {m.client.name} ({m.client.email})
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
           {error}
-        </div>
-      )}
-
-      {/* Active Mesocycles Warning */}
-      {template.mesocycles.length > 0 && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-900">
-            <strong>⚠️ Atención:</strong> Esta plantilla está asignada a {template.mesocycles.length} cliente(s) activos. Los cambios se reflejarán inmediatamente en sus planes.
-          </p>
-          <div className="mt-2 space-y-1">
-            {template.mesocycles.map((m: any) => (
-              <p key={m.id} className="text-xs text-yellow-800">
-                • {m.client.name} ({m.client.email})
-              </p>
-            ))}
-          </div>
         </div>
       )}
 
@@ -331,13 +472,129 @@ export default function TemplateEditor({ template }: TemplateEditorProps) {
           </Card>
         )}
 
-        {/* Days List */}
-        {template.days.map((day: any) => (
+        {/* Days List with Drag & Drop */}
+        <SortableDayList
+          days={localDays}
+          templateId={template.id}
+          editingDay={editingDay}
+          editDayForm={editDayForm}
+          loading={loading}
+          addingExercise={addingExercise}
+          editingExercise={editingExercise}
+          editExerciseForm={editExerciseForm}
+          newExercise={newExercise}
+          onEditDay={(day) => {
+            setEditDayForm({
+              name: day.name,
+              description: day.description || '',
+            })
+            setEditingDay(day.id)
+          }}
+          onUpdateDay={handleUpdateDay}
+          onCancelEditDay={() => setEditingDay(null)}
+          onDeleteDay={handleDeleteDay}
+          onAddExercise={(dayId) => setAddingExercise(dayId)}
+          onCancelAddExercise={() => setAddingExercise(null)}
+          onSubmitAddExercise={handleAddExercise}
+          onEditExercise={(exercise) => {
+            setEditExerciseForm({
+              name: exercise.name,
+              description: exercise.description || '',
+              videoUrl: exercise.videoUrl || '',
+              trainerComment: exercise.trainerComment || '',
+              sets: exercise.sets.map((s: any) => ({
+                setNumber: s.setNumber,
+                minReps: s.minReps,
+                maxReps: s.maxReps,
+                restSeconds: s.restSeconds || 90,
+              })),
+            })
+            setEditingExercise(exercise.id)
+          }}
+          onUpdateExercise={handleUpdateExercise}
+          onCancelEditExercise={() => setEditingExercise(null)}
+          onDeleteExercise={handleDeleteExercise}
+          onReorder={setLocalDays}
+          setEditDayForm={setEditDayForm}
+          setNewExercise={setNewExercise}
+          setEditExerciseForm={setEditExerciseForm}
+          addSetToNewExercise={addSetToNewExercise}
+          addSetToEditExercise={addSetToEditExercise}
+          removeSetFromEditExercise={removeSetFromEditExercise}
+        />
+        {/* Old Days List - REMOVED, now using SortableDayList above */}
+        {false && template.days.map((day: any) => (
           <Card key={day.id} className="border-l-4 border-l-blue-500">
             <CardHeader>
-              <CardTitle>{day.name}</CardTitle>
-              {day.description && (
-                <CardDescription>{day.description}</CardDescription>
+              {editingDay === day.id ? (
+                <div className="space-y-4">
+                  <CardTitle>Editar Día</CardTitle>
+                  <div>
+                    <Label>Nombre del Día *</Label>
+                    <Input
+                      value={editDayForm.name}
+                      onChange={(e) => setEditDayForm({ ...editDayForm, name: e.target.value })}
+                      placeholder="Ej: Día 1 - Pecho y Tríceps"
+                    />
+                  </div>
+                  <div>
+                    <Label>Descripción</Label>
+                    <Textarea
+                      value={editDayForm.description}
+                      onChange={(e) => setEditDayForm({ ...editDayForm, description: e.target.value })}
+                      placeholder="Descripción del enfoque del día..."
+                      rows={2}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditingDay(null)}
+                      disabled={loading}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={() => handleUpdateDay(day.id)}
+                      disabled={loading || !editDayForm.name}
+                    >
+                      {loading ? 'Guardando...' : 'Guardar Cambios'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle>{day.name}</CardTitle>
+                      {day.description && (
+                        <CardDescription>{day.description}</CardDescription>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditDayForm({
+                            name: day.name,
+                            description: day.description || '',
+                          })
+                          setEditingDay(day.id)
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteDay(day.id)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </div>
+                </>
               )}
             </CardHeader>
             <CardContent>
@@ -347,40 +604,186 @@ export default function TemplateEditor({ template }: TemplateEditorProps) {
                   <div className="space-y-3">
                     {day.exercises.map((exercise: any, idx: number) => (
                       <div key={exercise.id} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">
-                              {idx + 1}. {exercise.name}
-                            </h4>
-                            {exercise.description && (
-                              <p className="text-sm text-gray-600 mt-1">{exercise.description}</p>
-                            )}
-                            {exercise.trainerComment && (
-                              <p className="text-sm text-blue-600 mt-1 italic">💬 {exercise.trainerComment}</p>
-                            )}
-                            <div className="mt-2 space-y-1">
-                              {exercise.sets.map((set: any) => (
-                                <div key={set.id} className="text-sm text-gray-700">
-                                  <span className="font-medium">Serie {set.setNumber}:</span>{' '}
-                                  {set.minReps === set.maxReps
-                                    ? `${set.minReps} reps`
-                                    : `${set.minReps}-${set.maxReps} reps`}
-                                  {set.restSeconds && (
-                                    <span className="text-gray-500"> • Descanso: {set.restSeconds}s</span>
-                                  )}
+                        {editingExercise === exercise.id ? (
+                          <div className="space-y-3">
+                            <h5 className="font-medium">Editar Ejercicio</h5>
+                            <div>
+                              <Label>Nombre del Ejercicio *</Label>
+                              <Input
+                                value={editExerciseForm.name}
+                                onChange={(e) => setEditExerciseForm({ ...editExerciseForm, name: e.target.value })}
+                                placeholder="Ej: Press de Banca"
+                              />
+                            </div>
+                            <div>
+                              <Label>Descripción Técnica</Label>
+                              <Textarea
+                                value={editExerciseForm.description}
+                                onChange={(e) => setEditExerciseForm({ ...editExerciseForm, description: e.target.value })}
+                                placeholder="Explicación de la ejecución correcta..."
+                                rows={2}
+                              />
+                            </div>
+                            <div>
+                              <Label>URL del Vídeo (YouTube)</Label>
+                              <Input
+                                value={editExerciseForm.videoUrl}
+                                onChange={(e) => setEditExerciseForm({ ...editExerciseForm, videoUrl: e.target.value })}
+                                placeholder="https://youtube.com/watch?v=..."
+                              />
+                            </div>
+                            <div>
+                              <Label>Comentario del Entrenador</Label>
+                              <Input
+                                value={editExerciseForm.trainerComment}
+                                onChange={(e) => setEditExerciseForm({ ...editExerciseForm, trainerComment: e.target.value })}
+                                placeholder="Puntos clave, enfoque..."
+                              />
+                            </div>
+                            <div>
+                              <Label className="mb-2 block">Series</Label>
+                              {editExerciseForm.sets.map((set, setIdx) => (
+                                <div key={setIdx} className="flex gap-2 mb-2">
+                                  <Input
+                                    type="number"
+                                    placeholder="Min reps"
+                                    value={set.minReps}
+                                    onChange={(e) => {
+                                      const updated = [...editExerciseForm.sets]
+                                      updated[setIdx].minReps = parseInt(e.target.value) || 0
+                                      setEditExerciseForm({ ...editExerciseForm, sets: updated })
+                                    }}
+                                    className="w-24"
+                                  />
+                                  <Input
+                                    type="number"
+                                    placeholder="Max reps"
+                                    value={set.maxReps}
+                                    onChange={(e) => {
+                                      const updated = [...editExerciseForm.sets]
+                                      updated[setIdx].maxReps = parseInt(e.target.value) || 0
+                                      setEditExerciseForm({ ...editExerciseForm, sets: updated })
+                                    }}
+                                    className="w-24"
+                                  />
+                                  <Input
+                                    type="number"
+                                    placeholder="Descanso (s)"
+                                    value={set.restSeconds}
+                                    onChange={(e) => {
+                                      const updated = [...editExerciseForm.sets]
+                                      updated[setIdx].restSeconds = parseInt(e.target.value) || 0
+                                      setEditExerciseForm({ ...editExerciseForm, sets: updated })
+                                    }}
+                                    className="w-32"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => removeSetFromEditExercise(setIdx)}
+                                    className="text-red-600"
+                                  >
+                                    ✕
+                                  </Button>
                                 </div>
                               ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addSetToEditExercise}
+                                className="mt-2"
+                              >
+                                + Agregar Serie
+                              </Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => setEditingExercise(null)}
+                                disabled={loading}
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                onClick={() => handleUpdateExercise(exercise.id)}
+                                disabled={loading || !editExerciseForm.name}
+                              >
+                                {loading ? 'Guardando...' : 'Guardar Cambios'}
+                              </Button>
                             </div>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteExercise(exercise.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Eliminar
-                          </Button>
-                        </div>
+                        ) : (
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">
+                                {idx + 1}. {exercise.name}
+                              </h4>
+                              {exercise.description && (
+                                <p className="text-sm text-gray-600 mt-1">{exercise.description}</p>
+                              )}
+                              {exercise.trainerComment && (
+                                <p className="text-sm text-blue-600 mt-1 italic">💬 {exercise.trainerComment}</p>
+                              )}
+                              {exercise.videoUrl && (
+                                <p className="text-sm text-purple-600 mt-1">
+                                  🎥{' '}
+                                  <a
+                                    href={exercise.videoUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline hover:text-purple-700"
+                                  >
+                                    Ver vídeo de ejemplo
+                                  </a>
+                                </p>
+                              )}
+                              <div className="mt-2 space-y-1">
+                                {exercise.sets.map((set: any) => (
+                                  <div key={set.id} className="text-sm text-gray-700">
+                                    <span className="font-medium">Serie {set.setNumber}:</span>{' '}
+                                    de {set.minReps} a {set.maxReps} reps
+                                    {set.restSeconds && (
+                                      <span className="text-gray-500"> y {set.restSeconds}s de descanso</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditExerciseForm({
+                                    name: exercise.name,
+                                    description: exercise.description || '',
+                                    videoUrl: exercise.videoUrl || '',
+                                    trainerComment: exercise.trainerComment || '',
+                                    sets: exercise.sets.map((s: any) => ({
+                                      setNumber: s.setNumber,
+                                      minReps: s.minReps,
+                                      maxReps: s.maxReps,
+                                      restSeconds: s.restSeconds || 90,
+                                    })),
+                                  })
+                                  setEditingExercise(exercise.id)
+                                }}
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteExercise(exercise.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Eliminar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -408,6 +811,14 @@ export default function TemplateEditor({ template }: TemplateEditorProps) {
                           onChange={(e) => setNewExercise({ ...newExercise, description: e.target.value })}
                           placeholder="Explicación de la ejecución correcta..."
                           rows={2}
+                        />
+                      </div>
+                      <div>
+                        <Label>URL del Vídeo (YouTube)</Label>
+                        <Input
+                          value={newExercise.videoUrl}
+                          onChange={(e) => setNewExercise({ ...newExercise, videoUrl: e.target.value })}
+                          placeholder="https://youtube.com/watch?v=..."
                         />
                       </div>
                       <div>

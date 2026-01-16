@@ -106,7 +106,10 @@ export default function WorkoutDayLogForm({ data }: WorkoutDayLogFormProps) {
           fatigue: formData.fatigue ? parseInt(formData.fatigue) : null,
           emotionalState: formData.emotionalState || null,
           clientNotes: formData.clientNotes || null,
-          exerciseLogs,
+          exercises: exerciseLogs.map(exLog => ({
+            exerciseId: exLog.exerciseId,
+            sets: exLog.setLogs,
+          })),
         }),
       })
 

@@ -40,6 +40,7 @@ export default async function ClientDetailPage({
             },
           },
           microcycles: {
+            orderBy: { weekNumber: 'asc' },
             include: {
               _count: {
                 select: { workoutDayLogs: true },

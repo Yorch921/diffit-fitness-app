@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, MuscleGroup } from '@prisma/client'
 import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -243,10 +243,10 @@ async function main() {
       name: 'Día 1 - Pecho y Tríceps',
       description: 'Enfoque en press horizontal y extensiones de tríceps',
       exercises: [
-        { name: 'Press de Banca Plano', description: 'Press con barra, agarre medio', sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 180 }] },
-        { name: 'Press Inclinado con Mancuernas', description: 'Ángulo 30-45 grados', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
-        { name: 'Fondos en Paralelas', description: 'Inclinación hacia adelante para pecho', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
-        { name: 'Press Francés con Barra Z', description: 'Codos fijos, énfasis en cabeza larga', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 3, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Press de Banca Plano', description: 'Press con barra, agarre medio', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 180 }] },
+        { name: 'Press Inclinado con Mancuernas', description: 'Ángulo 30-45 grados', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Fondos en Paralelas', description: 'Inclinación hacia adelante para pecho', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Press Francés con Barra Z', description: 'Codos fijos, énfasis en cabeza larga', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 3, minReps: 10, maxReps: 12, restSeconds: 90 }] },
       ],
     },
     {
@@ -254,10 +254,10 @@ async function main() {
       name: 'Día 2 - Espalda y Bíceps',
       description: 'Jalones verticales y horizontales',
       exercises: [
-        { name: 'Dominadas', description: 'Agarre pronado, ancho de hombros', sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 180 }] },
-        { name: 'Remo con Barra', description: 'Tronco paralelo al suelo, jalón hacia abdomen', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
-        { name: 'Jalón al Pecho con Polea', description: 'Agarre amplio, jalón hacia clavículas', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
-        { name: 'Curl con Barra Z', description: 'Codos pegados al cuerpo', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 3, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Dominadas', description: 'Agarre pronado, ancho de hombros', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 180 }] },
+        { name: 'Remo con Barra', description: 'Tronco paralelo al suelo, jalón hacia abdomen', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Jalón al Pecho con Polea', description: 'Agarre amplio, jalón hacia clavículas', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Curl con Barra Z', description: 'Codos pegados al cuerpo', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 3, minReps: 10, maxReps: 12, restSeconds: 90 }] },
       ],
     },
     {
@@ -265,10 +265,10 @@ async function main() {
       name: 'Día 3 - Pierna Completa',
       description: 'Cuádriceps, femoral y glúteo',
       exercises: [
-        { name: 'Sentadilla con Barra', description: 'Profundidad completa, ATG si es posible', sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 240 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 240 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 240 }] },
-        { name: 'Peso Muerto Rumano', description: 'Énfasis en femoral, ligera flexión de rodilla', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 180 }] },
-        { name: 'Prensa de Pierna', description: 'Pies ancho de hombros, empuje con talones', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
-        { name: 'Curl Femoral Acostado', description: 'Contracción completa, evitar impulso', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 3, minReps: 12, maxReps: 15, restSeconds: 90 }] },
+        { name: 'Sentadilla con Barra', description: 'Profundidad completa, ATG si es posible', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 240 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 240 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 240 }] },
+        { name: 'Peso Muerto Rumano', description: 'Énfasis en femoral, ligera flexión de rodilla', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 180 }] },
+        { name: 'Prensa de Pierna', description: 'Pies ancho de hombros, empuje con talones', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
+        { name: 'Curl Femoral Acostado', description: 'Contracción completa, evitar impulso', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 3, minReps: 12, maxReps: 15, restSeconds: 90 }] },
       ],
     },
     {
@@ -276,10 +276,10 @@ async function main() {
       name: 'Día 4 - Hombros y Core',
       description: 'Deltoides anterior, lateral y posterior',
       exercises: [
-        { name: 'Press Militar con Barra', description: 'De pie, agarre medio, barra por delante', sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 180 }] },
-        { name: 'Elevaciones Laterales con Mancuernas', description: 'Ligera inclinación hacia adelante, codos ligeramente flexionados', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 3, minReps: 12, maxReps: 15, restSeconds: 90 }] },
-        { name: 'Face Pulls con Polea', description: 'Jalón hacia frente a nivel de nariz', sets: [{ setNumber: 1, minReps: 15, maxReps: 20, restSeconds: 60 }, { setNumber: 2, minReps: 15, maxReps: 20, restSeconds: 60 }] },
-        { name: 'Plancha Abdominal', description: 'Mantener espalda neutral, no arquear', sets: [{ setNumber: 1, minReps: 30, maxReps: 60, restSeconds: 90 }, { setNumber: 2, minReps: 30, maxReps: 60, restSeconds: 90 }] },
+        { name: 'Press Militar con Barra', description: 'De pie, agarre medio, barra por delante', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 180 }, { setNumber: 3, minReps: 6, maxReps: 8, restSeconds: 180 }] },
+        { name: 'Elevaciones Laterales con Mancuernas', description: 'Ligera inclinación hacia adelante, codos ligeramente flexionados', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 3, minReps: 12, maxReps: 15, restSeconds: 90 }] },
+        { name: 'Face Pulls con Polea', description: 'Jalón hacia frente a nivel de nariz', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 15, maxReps: 20, restSeconds: 60 }, { setNumber: 2, minReps: 15, maxReps: 20, restSeconds: 60 }] },
+        { name: 'Plancha Abdominal', description: 'Mantener espalda neutral, no arquear', muscleGroup: MuscleGroup.CORE, sets: [{ setNumber: 1, minReps: 30, maxReps: 60, restSeconds: 90 }, { setNumber: 2, minReps: 30, maxReps: 60, restSeconds: 90 }] },
       ],
     },
     {
@@ -287,10 +287,10 @@ async function main() {
       name: 'Día 5 - Full Body',
       description: 'Trabajo de todo el cuerpo con énfasis en fuerza',
       exercises: [
-        { name: 'Peso Muerto Convencional', description: 'Agarre doble pronado o mixto, espalda recta', sets: [{ setNumber: 1, minReps: 5, maxReps: 6, restSeconds: 240 }, { setNumber: 2, minReps: 5, maxReps: 6, restSeconds: 240 }, { setNumber: 3, minReps: 5, maxReps: 6, restSeconds: 240 }] },
-        { name: 'Press de Banca Inclinado', description: 'Ángulo 45 grados', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }] },
-        { name: 'Remo con Mancuernas', description: 'Apoyo unilateral, jalón hacia cadera', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
-        { name: 'Zancadas con Mancuernas', description: 'Paso largo, rodilla no pasa de punta de pie', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Peso Muerto Convencional', description: 'Agarre doble pronado o mixto, espalda recta', muscleGroup: MuscleGroup.FULL_BODY, sets: [{ setNumber: 1, minReps: 5, maxReps: 6, restSeconds: 240 }, { setNumber: 2, minReps: 5, maxReps: 6, restSeconds: 240 }, { setNumber: 3, minReps: 5, maxReps: 6, restSeconds: 240 }] },
+        { name: 'Press de Banca Inclinado', description: 'Ángulo 45 grados', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Remo con Mancuernas', description: 'Apoyo unilateral, jalón hacia cadera', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Zancadas con Mancuernas', description: 'Paso largo, rodilla no pasa de punta de pie', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
       ],
     },
   ]
@@ -314,6 +314,7 @@ async function main() {
           templateDayId: templateDay.id,
           name: exerciseData.name,
           description: exerciseData.description,
+          muscleGroup: exerciseData.muscleGroup,
           order: i + 1,
         },
       })
@@ -351,41 +352,42 @@ async function main() {
       dayNumber: 1,
       name: 'Día 1 - Tren Superior A',
       exercises: [
-        { name: 'Press de Banca', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
-        { name: 'Remo con Barra', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
-        { name: 'Press Militar', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Press de Banca', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Remo con Barra', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Press Militar', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
       ],
     },
     {
       dayNumber: 2,
       name: 'Día 2 - Tren Inferior A',
       exercises: [
-        { name: 'Sentadilla', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 180 }] },
-        { name: 'Peso Muerto Rumano', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
-        { name: 'Curl Femoral', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 90 }] },
+        { name: 'Sentadilla', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 180 }, { setNumber: 3, minReps: 8, maxReps: 10, restSeconds: 180 }] },
+        { name: 'Peso Muerto Rumano', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
+        { name: 'Curl Femoral', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 90 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 90 }] },
       ],
     },
     {
       dayNumber: 3,
       name: 'Día 3 - Tren Superior B',
       exercises: [
-        { name: 'Press Inclinado', sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }] },
-        { name: 'Dominadas', sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 120 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 120 }] },
-        { name: 'Elevaciones Laterales', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 60 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 60 }] },
+        { name: 'Press Inclinado', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 8, maxReps: 10, restSeconds: 120 }, { setNumber: 2, minReps: 8, maxReps: 10, restSeconds: 120 }] },
+        { name: 'Dominadas', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 6, maxReps: 8, restSeconds: 120 }, { setNumber: 2, minReps: 6, maxReps: 8, restSeconds: 120 }] },
+        { name: 'Elevaciones Laterales', muscleGroup: MuscleGroup.UPPER_BODY, sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 60 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 60 }] },
       ],
     },
     {
       dayNumber: 4,
       name: 'Día 4 - Tren Inferior B',
       exercises: [
-        { name: 'Prensa de Pierna', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
-        { name: 'Zancadas', sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
-        { name: 'Extensiones de Cuádriceps', sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 60 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 60 }] },
+        { name: 'Prensa de Pierna', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 120 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 120 }] },
+        { name: 'Zancadas', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 10, maxReps: 12, restSeconds: 90 }, { setNumber: 2, minReps: 10, maxReps: 12, restSeconds: 90 }] },
+        { name: 'Extensiones de Cuádriceps', muscleGroup: MuscleGroup.LOWER_BODY, sets: [{ setNumber: 1, minReps: 12, maxReps: 15, restSeconds: 60 }, { setNumber: 2, minReps: 12, maxReps: 15, restSeconds: 60 }] },
       ],
     },
   ]
 
   // Crear días y ejercicios para template de 4 días
+  const template4DaysDays = []
   for (const dayData of days4Structure) {
     const templateDay = await prisma.templateDay.create({
       data: {
@@ -395,6 +397,7 @@ async function main() {
         order: dayData.dayNumber,
       },
     })
+    template4DaysDays.push(templateDay)
 
     for (let i = 0; i < dayData.exercises.length; i++) {
       const exerciseData = dayData.exercises[i]
@@ -402,6 +405,7 @@ async function main() {
         data: {
           templateDayId: templateDay.id,
           name: exerciseData.name,
+          muscleGroup: exerciseData.muscleGroup,
           order: i + 1,
         },
       })
@@ -425,29 +429,30 @@ async function main() {
   // MESOCICLOS Y REGISTROS
   // ============================================================================
 
-  // Mesociclo para Miguel (4 semanas con template de 5 días)
-  const miguelStartDate = new Date('2026-01-06')
+  // Mesociclo para Miguel (20 semanas con template de 4 días)
+  const miguelStartDate = new Date('2026-01-12')
   const miguelMeso = await prisma.clientMesocycle.create({
     data: {
       clientId: miguel.id,
-      templateId: template5Days.id,
+      templateId: template4Days.id,
       trainerId: adri.id,
       startDate: miguelStartDate,
-      durationWeeks: 4,
-      endDate: new Date(new Date(miguelStartDate).setDate(miguelStartDate.getDate() + 4 * 7 - 1)),
+      durationWeeks: 20,
+      endDate: new Date(new Date(miguelStartDate).setDate(miguelStartDate.getDate() + 20 * 7 - 1)),
       isActive: true,
-      trainerNotes: 'Primer mesociclo de Miguel, enfoque en técnica',
+      trainerNotes: 'Primer mesociclo de Miguel, enfoque en técnica y progresión',
     },
   })
 
-  // Crear 4 microciclos para Miguel
-  for (let weekNum = 1; weekNum <= 4; weekNum++) {
+  // Crear 20 microciclos para Miguel y registrar entrenamientos hasta semana 11
+  const miguelMicrocycles = []
+  for (let weekNum = 1; weekNum <= 20; weekNum++) {
     const microStart = new Date(miguelStartDate)
     microStart.setDate(microStart.getDate() + (weekNum - 1) * 7)
     const microEnd = new Date(microStart)
     microEnd.setDate(microEnd.getDate() + 6)
 
-    await prisma.microcycle.create({
+    const micro = await prisma.microcycle.create({
       data: {
         mesocycleId: miguelMeso.id,
         weekNumber: weekNum,
@@ -455,8 +460,79 @@ async function main() {
         endDate: microEnd,
       },
     })
+    miguelMicrocycles.push(micro)
   }
-  console.log('✅ Mesocycle created for Miguel (4 weeks)')
+  console.log('✅ Mesocycle created for Miguel (20 weeks)')
+
+  // Generar workout logs para Miguel hasta semana 11 (4 días por semana)
+  for (let weekNum = 1; weekNum <= 11; weekNum++) {
+    const micro = miguelMicrocycles[weekNum - 1]
+
+    // Entrenar 4 días por semana (días 1, 2, 3, 4 del template)
+    for (let dayIdx = 0; dayIdx < 4; dayIdx++) {
+      const templateDay = template4DaysDays[dayIdx]
+      const workoutDate = new Date(micro.startDate)
+      workoutDate.setDate(workoutDate.getDate() + dayIdx)
+
+      // Crear workout log con todos sus ejercicios
+      const workoutLog = await prisma.workoutDayLog.create({
+        data: {
+          microcycleId: micro.id,
+          templateDayId: templateDay.id,
+          completedDate: workoutDate,
+          durationMinutes: 60 + Math.floor(Math.random() * 30), // 60-90 min
+          rpe: 6 + Math.floor(Math.random() * 3), // RPE 6-8
+          fatigue: 3 + Math.floor(Math.random() * 3), // Fatigue 3-5
+          emotionalState: 'BIEN',
+          clientNotes: weekNum === 1 && dayIdx === 0
+            ? 'Primer día, me siento bien y con ganas'
+            : weekNum === 11 && dayIdx === 3
+            ? 'Progresando bastante bien, me siento más fuerte cada semana'
+            : null,
+        },
+      })
+
+      // Obtener ejercicios del día del template
+      const dayExercises = await prisma.exercise.findMany({
+        where: { templateDayId: templateDay.id },
+        include: { sets: { orderBy: { setNumber: 'asc' } } },
+        orderBy: { order: 'asc' },
+      })
+
+      // Crear logs de ejercicios y series con pesos progresivos
+      for (const exercise of dayExercises) {
+        const exerciseLog = await prisma.exerciseLog.create({
+          data: {
+            workoutDayLogId: workoutLog.id,
+            exerciseId: exercise.id,
+          },
+        })
+
+        // Calcular peso base y progresión (incremento cada 2 semanas aprox)
+        const baseWeight = 20 + Math.random() * 40 // 20-60kg base
+        const weekProgression = Math.floor(weekNum / 2) * 2.5 // +2.5kg cada 2 semanas
+
+        for (const set of exercise.sets) {
+          const setWeight = baseWeight + weekProgression + (Math.random() * 5 - 2.5) // Variación ±2.5kg
+          const reps = set.minReps + Math.floor(Math.random() * (set.maxReps - set.minReps + 1))
+
+          await prisma.setLog.create({
+            data: {
+              exerciseLogId: exerciseLog.id,
+              setNumber: set.setNumber,
+              reps: reps,
+              weight: Math.round(setWeight * 2) / 2, // Redondear a 0.5kg
+              rir: Math.floor(Math.random() * 3), // RIR 0-2
+              notes: set.setNumber === exercise.sets.length && Math.random() > 0.8
+                ? 'Última serie al fallo'
+                : null,
+            },
+          })
+        }
+      }
+    }
+  }
+  console.log('✅ Workout logs created for Miguel (weeks 1-11, 4 days/week)')
 
   // Mesociclo para Rafa (con template de 4 días de Marta)
   const rafaStartDate = new Date('2026-01-06')
