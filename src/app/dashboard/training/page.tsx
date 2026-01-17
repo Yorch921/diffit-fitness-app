@@ -246,8 +246,11 @@ export default async function TrainingPage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                     {activeMesocycle.microcycles.map((microcycle) => {
                       const isCurrentWeek = currentMicrocycle?.id === microcycle.id
-                      const isFutureWeek = new Date() < new Date(microcycle.startDate)
                       const logsCount = microcycle._count.workoutDayLogs
+                      // Una semana es accesible si: es la actual, tiene registros, o ya pasó
+                      const isPastWeek = new Date() > new Date(microcycle.endDate)
+                      const hasLogs = logsCount > 0
+                      const isAccessible = isCurrentWeek || isPastWeek || hasLogs
 
                       return (
                         <Link
@@ -256,7 +259,7 @@ export default async function TrainingPage() {
                           className={`p-4 border-2 rounded-lg text-center transition-all hover:shadow-md ${
                             isCurrentWeek
                               ? 'border-blue-500 bg-blue-50'
-                              : isFutureWeek
+                              : !isAccessible
                               ? 'border-gray-200 bg-gray-50 opacity-50 pointer-events-none'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
@@ -272,7 +275,7 @@ export default async function TrainingPage() {
                               Actual
                             </span>
                           )}
-                          {isFutureWeek && (
+                          {!isAccessible && (
                             <span className="inline-block mt-2 px-2 py-0.5 bg-gray-400 text-white text-xs rounded-full">
                               Próxima
                             </span>
