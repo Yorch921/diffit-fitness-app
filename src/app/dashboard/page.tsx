@@ -39,6 +39,13 @@ const menuItems = [
     gradient: 'from-teal-500 to-cyan-600',
   },
   {
+    title: 'Revisiones',
+    description: 'Feedback de tu entrenador',
+    href: '/dashboard/reviews',
+    icon: '📋',
+    gradient: 'from-indigo-500 to-purple-600',
+  },
+  {
     title: 'Notificaciones',
     description: 'Mensajes de tu entrenador',
     href: '/dashboard/notifications',
