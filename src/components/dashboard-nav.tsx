@@ -54,9 +54,9 @@ export function DashboardNav() {
                   <p className="text-xs text-gray-500">Cliente</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-semibold">
-                  {profileData?.photoUrl ? (
+                  {profileData?.image ? (
                     <img
-                      src={profileData.photoUrl}
+                      src={profileData.image}
                       alt="Profile"
                       className="w-10 h-10 rounded-full object-cover"
                     />

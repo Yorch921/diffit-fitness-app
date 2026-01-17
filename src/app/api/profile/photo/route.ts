@@ -14,15 +14,20 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData()
-    const file = formData.get('photo') as File | null
+    const file = formData.get('photo')
 
     if (!file) {
       return NextResponse.json({ error: 'No se ha proporcionado una imagen' }, { status: 400 })
     }
 
+    // Validar que sea un File
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: 'El archivo no es valido' }, { status: 400 })
+    }
+
     // Validar tipo de archivo
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-    if (!validTypes.includes(file.type)) {
+    if (!file.type || !validTypes.includes(file.type)) {
       return NextResponse.json(
         { error: 'Tipo de archivo no valido. Solo se permiten JPG, PNG, WebP y GIF' },
         { status: 400 }
@@ -52,19 +57,20 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer)
 
     // URL relativa para guardar en DB
-    const photoUrl = `/uploads/profiles/${fileName}`
+    const image = `/uploads/profiles/${fileName}`
 
     // Actualizar usuario en DB
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { photoUrl },
+      data: { image },
     })
 
-    return NextResponse.json({ photoUrl })
-  } catch (error) {
-    console.error('Error uploading profile photo:', error)
+    return NextResponse.json({ image })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error uploading profile photo:', errorMessage, error)
     return NextResponse.json(
-      { error: 'Error al subir la imagen' },
+      { error: 'Error al subir la imagen', details: errorMessage },
       { status: 500 }
     )
   }

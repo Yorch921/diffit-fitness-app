@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         goal: true,
         timezone: true,
         notificationsOn: true,
-        photoUrl: true,
+        image: true,
         trainer: {
           select: {
             id: true,
@@ -40,11 +40,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
-  } catch (error) {
-    console.error('Error fetching profile:', error)
+    // Devolver con image como null si no existe
+    return NextResponse.json({
+      ...user,
+      image: user.image || null,
+    })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error fetching profile:', errorMessage, error)
     return NextResponse.json(
-      { error: 'Error al obtener perfil' },
+      { error: 'Error al obtener perfil', details: errorMessage },
       { status: 500 }
     )
   }
@@ -68,7 +73,7 @@ export async function PATCH(request: NextRequest) {
       goal,
       timezone,
       notificationsOn,
-      photoUrl,
+      image,
     } = body
 
     const updatedUser = await prisma.user.update({
@@ -82,7 +87,7 @@ export async function PATCH(request: NextRequest) {
         goal: goal || undefined,
         timezone: timezone || undefined,
         notificationsOn: notificationsOn !== undefined ? notificationsOn : undefined,
-        photoUrl: photoUrl !== undefined ? photoUrl : undefined,
+        image: image !== undefined ? image : undefined,
       },
       select: {
         id: true,
@@ -95,15 +100,16 @@ export async function PATCH(request: NextRequest) {
         goal: true,
         timezone: true,
         notificationsOn: true,
-        photoUrl: true,
+        image: true,
       },
     })
 
     return NextResponse.json(updatedUser)
-  } catch (error) {
-    console.error('Error updating profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error updating profile:', errorMessage, error)
     return NextResponse.json(
-      { error: 'Error al actualizar perfil' },
+      { error: 'Error al actualizar perfil', details: errorMessage },
       { status: 500 }
     )
   }

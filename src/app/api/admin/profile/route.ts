@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         specialty: true,
         licenseNumber: true,
         logoUrl: true,
-        photoUrl: true,
+        image: true,
         primaryColor: true,
         timezone: true,
         notificationsOn: true,
@@ -33,11 +33,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
-  } catch (error) {
-    console.error('Error fetching profile:', error)
+    // Devolver con image como null si no existe
+    return NextResponse.json({
+      ...user,
+      image: user.image || null,
+    })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error fetching admin profile:', errorMessage, error)
     return NextResponse.json(
-      { error: 'Error al obtener perfil' },
+      { error: 'Error al obtener perfil', details: errorMessage },
       { status: 500 }
     )
   }
@@ -84,10 +89,11 @@ export async function PATCH(request: NextRequest) {
     })
 
     return NextResponse.json(updatedUser)
-  } catch (error) {
-    console.error('Error updating profile:', error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Error updating admin profile:', errorMessage, error)
     return NextResponse.json(
-      { error: 'Error al actualizar perfil' },
+      { error: 'Error al actualizar perfil', details: errorMessage },
       { status: 500 }
     )
   }

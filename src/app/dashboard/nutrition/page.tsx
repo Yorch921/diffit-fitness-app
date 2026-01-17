@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
 import { redirect } from 'next/navigation'
+import MarkSectionSeen from '@/components/MarkSectionSeen'
 
 export default async function NutritionPage() {
   const session = await getServerSession(authOptions)
@@ -30,6 +31,9 @@ export default async function NutritionPage() {
 
   return (
     <div className="px-4 py-6 sm:px-0">
+      {/* Marcar seccion como vista */}
+      <MarkSectionSeen section="nutrition" />
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Plan Nutricional</h1>
         <p className="mt-2 text-gray-600">
@@ -154,21 +158,6 @@ export default async function NutritionPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Mensaje si no hay ningún plan */}
-      {nutritionPlans.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="text-6xl mb-4">🥗</div>
-            <h3 className="text-xl font-semibold mb-2">
-              Aún no tienes planes nutricionales
-            </h3>
-            <p className="text-gray-600">
-              Tu entrenador te asignará un plan de alimentación pronto
-            </p>
           </CardContent>
         </Card>
       )}

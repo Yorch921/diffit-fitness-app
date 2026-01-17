@@ -45,7 +45,7 @@ export default function SettingsPage() {
           specialty: data.specialty || '',
           licenseNumber: data.licenseNumber || '',
           logoUrl: data.logoUrl || '',
-          photoUrl: data.photoUrl || '',
+          photoUrl: data.image || '',
         })
         setPreferencesData({
           timezone: data.timezone || 'Europe/Madrid',
@@ -74,7 +74,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setProfileData({ ...profileData, photoUrl: data.photoUrl })
+        setProfileData({ ...profileData, photoUrl: data.image })
         alert('Foto de perfil actualizada correctamente')
       } else {
         const error = await response.json()

@@ -78,6 +78,12 @@ model User {
   timezone          String?
   notificationsOn   Boolean @default(true)
 
+  // Campos para trackear ultimo acceso a secciones (para badges de novedades)
+  lastSeenNotifications DateTime?
+  lastSeenReviews       DateTime?
+  lastSeenNutrition     DateTime?
+  lastSeenTraining      DateTime?
+
   // Relaciones cuando es CLIENT
   nutritionPlan NutritionPlan[]
   weightEntry   WeightEntry[]

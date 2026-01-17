@@ -47,7 +47,7 @@ export default function ClientSettingsPage() {
           height: data.height?.toString() || '',
           weight: data.initialWeight?.toString() || '',
           goal: data.goal || '',
-          photoUrl: data.photoUrl || '',
+          photoUrl: data.image || '',
         })
         setTrainer(data.trainer || null)
         setPreferences({
@@ -77,7 +77,7 @@ export default function ClientSettingsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setPersonalData({ ...personalData, photoUrl: data.photoUrl })
+        setPersonalData({ ...personalData, photoUrl: data.image })
         alert('Foto de perfil actualizada correctamente')
       } else {
         const error = await response.json()

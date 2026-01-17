@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
+import { useMarkSectionSeen } from '@/hooks/useMarkSectionSeen'
 
 interface Notification {
   id: string
@@ -20,6 +21,9 @@ export default function ClientNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
+
+  // Marcar seccion como vista
+  useMarkSectionSeen('notifications')
 
   useEffect(() => {
     fetchNotifications()

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { useMarkSectionSeen } from '@/hooks/useMarkSectionSeen'
 
 interface Review {
   id: string
@@ -24,6 +25,9 @@ export default function ClientReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [nextReviewDate, setNextReviewDate] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Marcar seccion como vista
+  useMarkSectionSeen('reviews')
 
   useEffect(() => {
     fetchReviews()

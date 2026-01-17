@@ -6,6 +6,7 @@ import { formatDate } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import MarkSectionSeen from '@/components/MarkSectionSeen'
 
 export default async function TrainingPage() {
   const session = await getServerSession(authOptions)
@@ -104,6 +105,9 @@ export default async function TrainingPage() {
 
   return (
     <div className="px-4 py-6 sm:px-0">
+      {/* Marcar seccion como vista */}
+      <MarkSectionSeen section="training" />
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Entrenamiento</h1>
         <p className="mt-2 text-gray-600">
