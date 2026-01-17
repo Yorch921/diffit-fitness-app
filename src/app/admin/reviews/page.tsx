@@ -244,24 +244,49 @@ export default function ReviewsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingReviews.map((client) => (
-                <div
-                  key={client.id}
-                  className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg"
-                >
-                  <div>
-                    <h4 className="font-medium text-gray-900">{client.name}</h4>
-                    <p className="text-sm text-gray-600">
-                      Revisión programada: {client.nextReviewDate ? formatDate(client.nextReviewDate) : '—'}
-                    </p>
+              {upcomingReviews.map((client) => {
+                const reviewDate = client.nextReviewDate ? new Date(client.nextReviewDate) : null
+                const today = new Date()
+                const isToday = reviewDate &&
+                  reviewDate.getDate() === today.getDate() &&
+                  reviewDate.getMonth() === today.getMonth() &&
+                  reviewDate.getFullYear() === today.getFullYear()
+
+                return (
+                  <div
+                    key={client.id}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      isToday
+                        ? 'bg-green-50 border border-green-200'
+                        : 'bg-blue-50 border border-blue-200'
+                    }`}
+                  >
+                    <div>
+                      <h4 className="font-medium text-gray-900">{client.name}</h4>
+                      <p className="text-sm text-gray-600">
+                        Revisión programada: {client.nextReviewDate ? formatDate(client.nextReviewDate) : '—'}
+                        {isToday && <span className="ml-2 text-green-600 font-medium">(Hoy)</span>}
+                      </p>
+                    </div>
+                    {isToday && (
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            userId: client.id,
+                            reviewDate: new Date().toISOString().split('T')[0],
+                          })
+                          setShowForm(true)
+                        }}
+                      >
+                        Registrar Revisión
+                      </Button>
+                    )}
                   </div>
-                  <Link href={`/admin/clients/${client.id}`}>
-                    <Button variant="outline" size="sm">
-                      Ver Cliente
-                    </Button>
-                  </Link>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>
