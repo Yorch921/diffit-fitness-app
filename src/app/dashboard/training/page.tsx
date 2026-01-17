@@ -80,17 +80,27 @@ export default async function TrainingPage() {
     orderBy: { completedAt: 'desc' },
   })
 
-  // Función para determinar la semana actual
+  // Función para determinar la semana actual basada en registros
+  // La semana actual es la última que tiene registros de entrenamiento
   const getCurrentMicrocycle = () => {
     if (!activeMesocycle) return null
-    const today = new Date()
-    return activeMesocycle.microcycles.find(
-      (microcycle) =>
-        today >= new Date(microcycle.startDate) && today <= new Date(microcycle.endDate)
+
+    // Buscar la última semana con registros
+    const weeksWithLogs = activeMesocycle.microcycles.filter(
+      (m) => m._count.workoutDayLogs > 0
     )
+
+    if (weeksWithLogs.length > 0) {
+      // La semana actual es la última con registros
+      return weeksWithLogs[weeksWithLogs.length - 1]
+    }
+
+    // Si no hay registros, la primera semana es la actual
+    return activeMesocycle.microcycles[0] || null
   }
 
   const currentMicrocycle = activeMesocycle ? getCurrentMicrocycle() : null
+  const currentWeekNumber = currentMicrocycle?.weekNumber || 1
 
   return (
     <div className="px-4 py-6 sm:px-0">
@@ -233,7 +243,7 @@ export default async function TrainingPage() {
                           📅 Semana Actual: Semana {currentMicrocycle.weekNumber}
                         </p>
                         <p className="text-xs text-blue-700 mt-1">
-                          {formatDate(currentMicrocycle.startDate)} - {formatDate(currentMicrocycle.endDate)}
+                          Ultimo registro en semana {currentMicrocycle.weekNumber} - Puedes registrar hasta semana {currentWeekNumber + 1}
                         </p>
                       </div>
                       <span className="text-2xl">💪</span>
@@ -247,10 +257,10 @@ export default async function TrainingPage() {
                     {activeMesocycle.microcycles.map((microcycle) => {
                       const isCurrentWeek = currentMicrocycle?.id === microcycle.id
                       const logsCount = microcycle._count.workoutDayLogs
-                      // Una semana es accesible si: es la actual, tiene registros, o ya pasó
-                      const isPastWeek = new Date() > new Date(microcycle.endDate)
+                      const isNextWeek = microcycle.weekNumber === currentWeekNumber + 1
+                      // Una semana es accesible si: es la actual, es la siguiente, o tiene registros
                       const hasLogs = logsCount > 0
-                      const isAccessible = isCurrentWeek || isPastWeek || hasLogs
+                      const isAccessible = isCurrentWeek || isNextWeek || hasLogs
 
                       return (
                         <Link
@@ -259,6 +269,8 @@ export default async function TrainingPage() {
                           className={`p-4 border-2 rounded-lg text-center transition-all hover:shadow-md ${
                             isCurrentWeek
                               ? 'border-blue-500 bg-blue-50'
+                              : isNextWeek
+                              ? 'border-green-300 bg-green-50 hover:border-green-400'
                               : !isAccessible
                               ? 'border-gray-200 bg-gray-50 opacity-50 pointer-events-none'
                               : 'border-gray-200 hover:border-gray-300'
@@ -275,9 +287,14 @@ export default async function TrainingPage() {
                               Actual
                             </span>
                           )}
+                          {isNextWeek && !hasLogs && (
+                            <span className="inline-block mt-2 px-2 py-0.5 bg-green-600 text-white text-xs rounded-full">
+                              Siguiente
+                            </span>
+                          )}
                           {!isAccessible && (
                             <span className="inline-block mt-2 px-2 py-0.5 bg-gray-400 text-white text-xs rounded-full">
-                              Próxima
+                              Bloqueada
                             </span>
                           )}
                         </Link>
