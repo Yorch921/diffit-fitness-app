@@ -21,12 +21,6 @@ export function AdminNav() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [profileData, setProfileData] = useState<any>(null)
 
-  useEffect(() => {
-    if (session) {
-      fetchProfile()
-    }
-  }, [session])
-
   const fetchProfile = async () => {
     try {
       const response = await fetch('/api/admin/profile')
@@ -36,6 +30,24 @@ export function AdminNav() {
       console.error('Error fetching profile:', error)
     }
   }
+
+  useEffect(() => {
+    if (session) {
+      fetchProfile()
+    }
+  }, [session])
+
+  // Refrescar perfil cuando se dispara el evento profileUpdated (ej: despues de cambiar foto)
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      fetchProfile()
+    }
+
+    window.addEventListener('profileUpdated', handleProfileUpdated)
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdated)
+    }
+  }, [session])
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/login' })
@@ -92,9 +104,9 @@ export function AdminNav() {
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
-                  {profileData?.logoUrl ? (
+                  {profileData?.image ? (
                     <img
-                      src={profileData.logoUrl}
+                      src={profileData.image}
                       alt="Profile"
                       className="w-10 h-10 rounded-full object-cover"
                     />

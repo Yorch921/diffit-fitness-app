@@ -75,6 +75,8 @@ export default function SettingsPage() {
       if (response.ok) {
         const data = await response.json()
         setProfileData({ ...profileData, photoUrl: data.image })
+        // Notificar al nav para que actualice la foto
+        window.dispatchEvent(new CustomEvent('profileUpdated'))
         alert('Foto de perfil actualizada correctamente')
       } else {
         const error = await response.json()

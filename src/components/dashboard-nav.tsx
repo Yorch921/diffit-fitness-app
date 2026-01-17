@@ -9,12 +9,6 @@ export function DashboardNav() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [profileData, setProfileData] = useState<any>(null)
 
-  useEffect(() => {
-    if (session) {
-      fetchProfile()
-    }
-  }, [session])
-
   const fetchProfile = async () => {
     try {
       const response = await fetch('/api/profile')
@@ -24,6 +18,24 @@ export function DashboardNav() {
       console.error('Error fetching profile:', error)
     }
   }
+
+  useEffect(() => {
+    if (session) {
+      fetchProfile()
+    }
+  }, [session])
+
+  // Refrescar perfil cuando se dispara el evento profileUpdated (ej: despues de cambiar foto)
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      fetchProfile()
+    }
+
+    window.addEventListener('profileUpdated', handleProfileUpdated)
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdated)
+    }
+  }, [session])
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/login' })
