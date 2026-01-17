@@ -25,6 +25,14 @@ export async function GET(request: NextRequest) {
         goal: true,
         timezone: true,
         notificationsOn: true,
+        photoUrl: true,
+        trainer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     })
 
@@ -60,6 +68,7 @@ export async function PATCH(request: NextRequest) {
       goal,
       timezone,
       notificationsOn,
+      photoUrl,
     } = body
 
     const updatedUser = await prisma.user.update({
@@ -73,6 +82,7 @@ export async function PATCH(request: NextRequest) {
         goal: goal || undefined,
         timezone: timezone || undefined,
         notificationsOn: notificationsOn !== undefined ? notificationsOn : undefined,
+        photoUrl: photoUrl !== undefined ? photoUrl : undefined,
       },
       select: {
         id: true,
@@ -85,6 +95,7 @@ export async function PATCH(request: NextRequest) {
         goal: true,
         timezone: true,
         notificationsOn: true,
+        photoUrl: true,
       },
     })
 

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         specialty: true,
         licenseNumber: true,
         logoUrl: true,
+        photoUrl: true,
         primaryColor: true,
         timezone: true,
         notificationsOn: true,

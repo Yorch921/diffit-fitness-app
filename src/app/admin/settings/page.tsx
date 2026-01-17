@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,9 @@ import { Label } from '@/components/ui/label'
 export default function SettingsPage() {
   const { data: session } = useSession()
   const [loading, setLoading] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [activeTab, setActiveTab] = useState<'profile' | 'preferences'>('profile')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
@@ -18,9 +20,8 @@ export default function SettingsPage() {
     specialty: '',
     licenseNumber: '',
     logoUrl: '',
+    photoUrl: '',
   })
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>('')
   const [preferencesData, setPreferencesData] = useState({
     timezone: 'Europe/Madrid',
     notificationsOn: true,
@@ -44,8 +45,8 @@ export default function SettingsPage() {
           specialty: data.specialty || '',
           licenseNumber: data.licenseNumber || '',
           logoUrl: data.logoUrl || '',
+          photoUrl: data.photoUrl || '',
         })
-        setImagePreview(data.logoUrl || '')
         setPreferencesData({
           timezone: data.timezone || 'Europe/Madrid',
           notificationsOn: data.notificationsOn ?? true,
@@ -56,17 +57,33 @@ export default function SettingsPage() {
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setImageFile(file)
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
-      // Create preview
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
+    setUploadingPhoto(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('photo', file)
+
+      const response = await fetch('/api/profile/photo', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProfileData({ ...profileData, photoUrl: data.photoUrl })
+        alert('Foto de perfil actualizada correctamente')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Error al subir la imagen')
       }
-      reader.readAsDataURL(file)
+    } catch (error) {
+      alert('Error al subir la imagen')
+    } finally {
+      setUploadingPhoto(false)
     }
   }
 
@@ -78,7 +95,12 @@ export default function SettingsPage() {
       const response = await fetch('/api/admin/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileData),
+        body: JSON.stringify({
+          name: profileData.name,
+          phone: profileData.phone,
+          specialty: profileData.specialty,
+          licenseNumber: profileData.licenseNumber,
+        }),
       })
 
       if (response.ok) {
@@ -126,7 +148,7 @@ export default function SettingsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Ajustes</h1>
         <p className="mt-2 text-gray-600">
-          Configura tu perfil y preferencias de la aplicación
+          Configura tu perfil y preferencias de la aplicacion
         </p>
       </div>
 
@@ -152,88 +174,137 @@ export default function SettingsPage() {
 
       {/* Tab Content */}
       {activeTab === 'profile' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Perfil Profesional</CardTitle>
-            <CardDescription>
-              Información sobre tu práctica profesional
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSaveProfile} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nombre Completo</Label>
-                  <Input
-                    id="name"
-                    value={profileData.name}
-                    onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                    placeholder="Dr. Juan Pérez"
-                  />
+        <div className="space-y-6">
+          {/* Foto de Perfil */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Foto de Perfil</CardTitle>
+              <CardDescription>
+                Sube una foto para personalizar tu perfil
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  {profileData.photoUrl ? (
+                    <img
+                      src={profileData.photoUrl}
+                      alt="Foto de perfil"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-gray-100"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-gray-100">
+                      {profileData.name?.[0]?.toUpperCase() || 'E'}
+                    </div>
+                  )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Profesional</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    placeholder="juan@ejemplo.com"
-                    disabled
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
                   />
-                  <p className="text-xs text-gray-500">
-                    El email no se puede cambiar desde aquí
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                  >
+                    {uploadingPhoto ? 'Subiendo...' : 'Cambiar foto'}
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    JPG, PNG, WebP o GIF. Maximo 5MB.
                   </p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={profileData.phone}
-                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                    placeholder="+34 600 000 000"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="specialty">Especialidad</Label>
-                  <Input
-                    id="specialty"
-                    value={profileData.specialty}
-                    onChange={(e) => setProfileData({ ...profileData, specialty: e.target.value })}
-                    placeholder="Nutrición Deportiva"
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="licenseNumber">Número de Colegiado</Label>
-                  <Input
-                    id="licenseNumber"
-                    value={profileData.licenseNumber}
-                    onChange={(e) => setProfileData({ ...profileData, licenseNumber: e.target.value })}
-                    placeholder="12345"
-                  />
-                </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="flex gap-2 pt-4 border-t">
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Guardar Cambios'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          {/* Perfil Profesional */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Perfil Profesional</CardTitle>
+              <CardDescription>
+                Informacion sobre tu practica profesional
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSaveProfile} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nombre Completo</Label>
+                    <Input
+                      id="name"
+                      value={profileData.name}
+                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                      placeholder="Tu nombre"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Profesional</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileData.email}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500">
+                      El email no se puede cambiar desde aqui
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefono</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={profileData.phone}
+                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                      placeholder="+34 600 000 000"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="specialty">Especialidad</Label>
+                    <Input
+                      id="specialty"
+                      value={profileData.specialty}
+                      onChange={(e) => setProfileData({ ...profileData, specialty: e.target.value })}
+                      placeholder="Nutricion Deportiva"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="licenseNumber">Numero de Colegiado</Label>
+                    <Input
+                      id="licenseNumber"
+                      value={profileData.licenseNumber}
+                      onChange={(e) => setProfileData({ ...profileData, licenseNumber: e.target.value })}
+                      placeholder="12345"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Guardando...' : 'Guardar Cambios'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {activeTab === 'preferences' && (
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Preferencias de la Aplicación</CardTitle>
+              <CardTitle>Preferencias de la Aplicacion</CardTitle>
               <CardDescription>
                 Personaliza tu experiencia en Diffit
               </CardDescription>
@@ -251,9 +322,9 @@ export default function SettingsPage() {
                     >
                       <option value="Europe/Madrid">Europa/Madrid (GMT+1)</option>
                       <option value="Europe/London">Europa/Londres (GMT+0)</option>
-                      <option value="America/New_York">América/Nueva York (GMT-5)</option>
-                      <option value="America/Mexico_City">América/Ciudad de México (GMT-6)</option>
-                      <option value="America/Los_Angeles">América/Los Ángeles (GMT-8)</option>
+                      <option value="America/New_York">America/Nueva York (GMT-5)</option>
+                      <option value="America/Mexico_City">America/Ciudad de Mexico (GMT-6)</option>
+                      <option value="America/Los_Angeles">America/Los Angeles (GMT-8)</option>
                     </select>
                   </div>
 
@@ -289,7 +360,7 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Información de la Cuenta</CardTitle>
+              <CardTitle>Informacion de la Cuenta</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
