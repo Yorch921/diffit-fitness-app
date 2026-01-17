@@ -38,3 +38,7 @@ next-env.d.ts
 
 # uploads
 /public/uploads
+
+# Archivos temporales de Claude / IA
+tmpclaude-*
+.claude/
