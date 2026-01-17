@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,6 +14,7 @@ interface Client {
   id: string
   name: string
   email: string
+  image: string | null
   status: ClientStatus
   createdAt: Date
   trainer?: {
@@ -34,6 +36,7 @@ interface ClientsTableProps {
 }
 
 export default function ClientsTable({ clients }: ClientsTableProps) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'ALL' | ClientStatus>('ALL')
   const [planFilter, setPlanFilter] = useState<'ALL' | 'NUTRITION' | 'TRAINING' | 'BOTH' | 'NONE'>('ALL')
@@ -247,9 +250,6 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Planes
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -259,33 +259,48 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
                     const hasTrainingPlan = client._count.clientMesocycles > 0
 
                     return (
-                      <tr key={client.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {client.name}
+                      <tr
+                        key={client.id}
+                        onClick={() => router.push(`/admin/clients/${client.id}`)}
+                        className="hover:bg-blue-50 cursor-pointer transition-colors"
+                      >
+                        <td className="px-6 py-5 whitespace-nowrap">
+                          <div className="flex items-center gap-4">
+                            {/* Foto de perfil */}
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                              {client.image ? (
+                                <img
+                                  src={client.image}
+                                  alt={client.name}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-lg">{client.name[0].toUpperCase()}</span>
+                              )}
                             </div>
-                            <div className="text-sm text-gray-500">{client.email}</div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {client.name}
+                              </div>
+                              <div className="text-sm text-gray-500">{client.email}</div>
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-5 whitespace-nowrap">
                           <div className="text-sm text-gray-700">
                             {client.trainer?.name || '—'}
                           </div>
-                          {client.trainer?.specialty && (
-                            <div className="text-xs text-gray-500">{client.trainer.specialty}</div>
-                          )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-5 whitespace-nowrap">
                           {getStatusBadge(client.status)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(client.createdAt.toISOString())}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-500">
                           {lastActivity ? formatDate(lastActivity.toISOString()) : '—'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-5 whitespace-nowrap">
                           <div className="flex gap-2 text-sm">
                             {hasNutritionPlan && (
                               <span className="text-green-600" title="Plan nutricional activo">
@@ -300,15 +315,6 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
                             {!hasNutritionPlan && !hasTrainingPlan && (
                               <span className="text-gray-400">Sin planes</span>
                             )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end gap-2">
-                            <Link href={`/admin/clients/${client.id}`}>
-                              <Button variant="outline" size="sm">
-                                Ver
-                              </Button>
-                            </Link>
                           </div>
                         </td>
                       </tr>
