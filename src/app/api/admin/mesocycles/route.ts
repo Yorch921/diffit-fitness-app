@@ -105,11 +105,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verificar que el template pertenece al trainer
+    // Verificar que el template existe y no está archivado
     const template = await prisma.trainingTemplate.findFirst({
       where: {
         id: templateId,
-        trainerId: session.user.id,
+        isArchived: false,
       },
     })
 

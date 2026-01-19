@@ -49,5 +49,19 @@ export default async function ClientsPage() {
     },
   })
 
-  return <ClientsTable clients={clients} />
+  // Obtener lista de entrenadores únicos
+  const trainers = await prisma.user.findMany({
+    where: {
+      role: 'TRAINER',
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  })
+
+  return <ClientsTable clients={clients} trainers={trainers} />
 }

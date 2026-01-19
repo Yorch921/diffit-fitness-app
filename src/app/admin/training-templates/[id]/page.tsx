@@ -18,7 +18,7 @@ export default async function TemplateDetailPage({
   const template = await prisma.trainingTemplate.findFirst({
     where: {
       id: params.id,
-      trainerId: session.user.id,
+      isArchived: false,
     },
     include: {
       days: {
@@ -37,7 +37,7 @@ export default async function TemplateDetailPage({
       mesocycles: {
         where: {
           isActive: true,
-          trainerId: session.user.id,
+          isForked: false,
         },
         include: {
           client: {

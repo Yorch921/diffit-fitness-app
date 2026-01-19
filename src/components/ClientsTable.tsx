@@ -31,17 +31,24 @@ interface Client {
   }
 }
 
-interface ClientsTableProps {
-  clients: Client[]
+interface Trainer {
+  id: string
+  name: string
 }
 
-export default function ClientsTable({ clients }: ClientsTableProps) {
+interface ClientsTableProps {
+  clients: Client[]
+  trainers: Trainer[]
+}
+
+export default function ClientsTable({ clients, trainers }: ClientsTableProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'ALL' | ClientStatus>('ALL')
   const [planFilter, setPlanFilter] = useState<'ALL' | 'NUTRITION' | 'TRAINING' | 'BOTH' | 'NONE'>('ALL')
   const [ageFilter, setAgeFilter] = useState<'ALL' | 'NEW' | 'OLD'>('ALL')
   const [activityFilter, setActivityFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL')
+  const [trainerFilter, setTrainerFilter] = useState<string>('ALL')
 
   // Calcular última actividad
   const getLastActivity = (client: Client) => {
@@ -83,9 +90,12 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
       if (activityFilter === 'ACTIVE') matchesActivity = lastActivity ? new Date(lastActivity) >= sevenDaysAgo : false
       if (activityFilter === 'INACTIVE') matchesActivity = !lastActivity || new Date(lastActivity) < sevenDaysAgo
 
-      return matchesSearch && matchesStatus && matchesPlan && matchesAge && matchesActivity
+      // Filtro por entrenador
+      const matchesTrainer = trainerFilter === 'ALL' || client.trainer?.id === trainerFilter
+
+      return matchesSearch && matchesStatus && matchesPlan && matchesAge && matchesActivity && matchesTrainer
     })
-  }, [clients, searchTerm, statusFilter, planFilter, ageFilter, activityFilter])
+  }, [clients, searchTerm, statusFilter, planFilter, ageFilter, activityFilter, trainerFilter])
 
   // Obtener badge de estado
   const getStatusBadge = (status: ClientStatus) => {
@@ -135,7 +145,24 @@ export default function ClientsTable({ clients }: ClientsTableProps) {
             </div>
 
             {/* Fila de filtros */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Filtro de entrenador */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 block mb-2">Entrenador</label>
+                <select
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={trainerFilter}
+                  onChange={(e) => setTrainerFilter(e.target.value)}
+                >
+                  <option value="ALL">Todos</option>
+                  {trainers.map((trainer) => (
+                    <option key={trainer.id} value={trainer.id}>
+                      {trainer.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Filtro de estado */}
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-2">Estado</label>

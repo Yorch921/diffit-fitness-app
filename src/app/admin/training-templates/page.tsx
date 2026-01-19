@@ -16,7 +16,6 @@ export default async function TrainingTemplatesPage() {
 
   const templates = await prisma.trainingTemplate.findMany({
     where: {
-      trainerId: session.user.id,
       isArchived: false,
     },
     include: {
@@ -28,8 +27,8 @@ export default async function TrainingTemplatesPage() {
       },
       mesocycles: {
         where: {
-          trainerId: session.user.id,
           isForked: false,
+          isActive: true,
         },
         select: {
           id: true,
