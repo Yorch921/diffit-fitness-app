@@ -27,7 +27,11 @@ export default async function TrainingTemplatesPage() {
         },
       },
       _count: {
-        select: { mesocycles: true },
+        select: {
+          mesocycles: {
+            where: { isForked: false }
+          }
+        },
       },
     },
     orderBy: { createdAt: 'desc' },

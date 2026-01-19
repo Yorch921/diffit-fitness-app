@@ -80,16 +80,9 @@ export default function TemplateCardActions({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
-        <Link href={`/admin/training-templates/${templateId}`} className="flex-1">
-          <Button variant="outline" className="w-full">
-            Editar
-          </Button>
-        </Link>
-        <Link href={`/admin/training-templates/${templateId}`} className="flex-1">
-          <Button className="w-full">Ver Detalle</Button>
-        </Link>
-      </div>
+      <Link href={`/admin/training-templates/${templateId}`}>
+        <Button className="w-full">Ver Detalle</Button>
+      </Link>
       <div className="flex gap-2">
         <Button
           variant="outline"
