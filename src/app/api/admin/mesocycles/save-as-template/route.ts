@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // POST /api/admin/mesocycles/save-as-template - Guardar mesociclo como plantilla reutilizable
+// Soporta tanto planes vinculados (isForked = false) como forked (isForked = true)
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Obtener el mesociclo con su template
+    // Obtener el mesociclo con template Y clientDays (para soportar ambos casos)
     const mesocycle = await prisma.clientMesocycle.findFirst({
       where: {
         id: mesocycleId,
@@ -47,6 +48,19 @@ export async function POST(request: Request) {
             },
           },
         },
+        clientDays: {
+          orderBy: { order: 'asc' },
+          include: {
+            exercises: {
+              orderBy: { order: 'asc' },
+              include: {
+                sets: {
+                  orderBy: { setNumber: 'asc' },
+                },
+              },
+            },
+          },
+        },
       },
     })
 
@@ -57,19 +71,35 @@ export async function POST(request: Request) {
       )
     }
 
-    // Crear nueva plantilla copiando la estructura del template actual
+    // Determinar fuente de datos según isForked
+    const isForked = mesocycle.isForked
+    const sourceDays = isForked ? mesocycle.clientDays : (mesocycle.template?.days || [])
+
+    if (sourceDays.length === 0) {
+      return NextResponse.json(
+        { error: 'El plan no tiene días para guardar como plantilla' },
+        { status: 400 }
+      )
+    }
+
+    // Crear nueva plantilla
+    const numberOfDays = isForked ? sourceDays.length : (mesocycle.template?.numberOfDays || sourceDays.length)
+    const sourceDescription = isForked
+      ? 'Plantilla creada a partir de un plan personalizado'
+      : `Plantilla creada a partir del plan de ${mesocycle.template?.title || 'entrenamiento'}`
+
     const newTemplate = await prisma.trainingTemplate.create({
       data: {
         title: templateTitle,
-        description: `Plantilla creada a partir del plan de ${mesocycle.template.title}`,
+        description: sourceDescription,
         trainerId: session.user.id,
-        numberOfDays: mesocycle.template.numberOfDays,
-        trainerNotes: mesocycle.template.trainerNotes,
+        numberOfDays,
+        trainerNotes: mesocycle.template?.trainerNotes || null,
       },
     })
 
-    // Copiar días y ejercicios
-    for (const day of mesocycle.template.days) {
+    // Copiar días y ejercicios desde la fuente correcta
+    for (const day of sourceDays) {
       const newDay = await prisma.templateDay.create({
         data: {
           templateId: newTemplate.id,
@@ -90,21 +120,24 @@ export async function POST(request: Request) {
             videoUrl: exercise.videoUrl,
             trainerComment: exercise.trainerComment,
             order: exercise.order,
+            muscleGroup: exercise.muscleGroup,
           },
         })
 
         // Copiar sets del ejercicio
-        const setsData = exercise.sets.map((set) => ({
-          exerciseId: newExercise.id,
-          setNumber: set.setNumber,
-          minReps: set.minReps,
-          maxReps: set.maxReps,
-          restSeconds: set.restSeconds,
-        }))
+        if (exercise.sets.length > 0) {
+          const setsData = exercise.sets.map((set: any) => ({
+            exerciseId: newExercise.id,
+            setNumber: set.setNumber,
+            minReps: set.minReps,
+            maxReps: set.maxReps,
+            restSeconds: set.restSeconds,
+          }))
 
-        await prisma.exerciseSet.createMany({
-          data: setsData,
-        })
+          await prisma.exerciseSet.createMany({
+            data: setsData,
+          })
+        }
       }
     }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -220,33 +220,39 @@ function SortableDayItem({
                             <div key={setIdx} className="flex gap-2 mb-2">
                               <Input
                                 type="number"
+                                min="1"
                                 placeholder="Min reps"
                                 value={set.minReps}
                                 onChange={(e) => {
                                   const updated = [...editExerciseForm.sets]
-                                  updated[setIdx].minReps = parseInt(e.target.value) || 0
+                                  const val = parseInt(e.target.value, 10)
+                                  updated[setIdx].minReps = isNaN(val) ? 1 : Math.max(1, val)
                                   setEditExerciseForm({ ...editExerciseForm, sets: updated })
                                 }}
                                 className="w-24"
                               />
                               <Input
                                 type="number"
+                                min="1"
                                 placeholder="Max reps"
                                 value={set.maxReps}
                                 onChange={(e) => {
                                   const updated = [...editExerciseForm.sets]
-                                  updated[setIdx].maxReps = parseInt(e.target.value) || 0
+                                  const val = parseInt(e.target.value, 10)
+                                  updated[setIdx].maxReps = isNaN(val) ? 1 : Math.max(1, val)
                                   setEditExerciseForm({ ...editExerciseForm, sets: updated })
                                 }}
                                 className="w-24"
                               />
                               <Input
                                 type="number"
+                                min="0"
                                 placeholder="Descanso (s)"
                                 value={set.restSeconds}
                                 onChange={(e) => {
                                   const updated = [...editExerciseForm.sets]
-                                  updated[setIdx].restSeconds = parseInt(e.target.value) || 0
+                                  const val = parseInt(e.target.value, 10)
+                                  updated[setIdx].restSeconds = isNaN(val) ? 0 : Math.max(0, val)
                                   setEditExerciseForm({ ...editExerciseForm, sets: updated })
                                 }}
                                 className="w-32"
@@ -526,6 +532,11 @@ export default function SortableDayList({
   removeSetFromEditExercise,
 }: SortableDayListProps) {
   const [localDays, setLocalDays] = useState(days)
+
+  // Sincronizar estado local cuando las props cambian (después de router.refresh())
+  useEffect(() => {
+    setLocalDays(days)
+  }, [days])
 
   const sensors = useSensors(
     useSensor(PointerSensor),

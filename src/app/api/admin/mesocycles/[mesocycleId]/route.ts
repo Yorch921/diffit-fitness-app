@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // GET /api/admin/mesocycles/[id] - Detalle mesociclo con microciclos
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { mesocycleId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,7 +17,7 @@ export async function GET(
 
     const mesocycle = await prisma.clientMesocycle.findFirst({
       where: {
-        id: params.id,
+        id: params.mesocycleId,
         trainerId: session.user.id,
       },
       include: {
@@ -84,7 +84,7 @@ export async function GET(
 // PATCH /api/admin/mesocycles/[id] - Actualizar notas o duración
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { mesocycleId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -99,7 +99,7 @@ export async function PATCH(
     // Verificar que el mesociclo pertenece al trainer
     const existingMesocycle = await prisma.clientMesocycle.findFirst({
       where: {
-        id: params.id,
+        id: params.mesocycleId,
         trainerId: session.user.id,
       },
     })
@@ -112,7 +112,7 @@ export async function PATCH(
     }
 
     const mesocycle = await prisma.clientMesocycle.update({
-      where: { id: params.id },
+      where: { id: params.mesocycleId },
       data: {
         trainerNotes: trainerNotes?.trim() || null,
       },

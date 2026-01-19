@@ -44,6 +44,19 @@ export default async function MicrocycleDetailPage({
           },
         },
       },
+      clientDays: {
+        orderBy: { dayNumber: 'asc' },
+        include: {
+          exercises: {
+            orderBy: { order: 'asc' },
+            include: {
+              sets: {
+                orderBy: { setNumber: 'asc' },
+              },
+            },
+          },
+        },
+      },
       microcycles: {
         where: { weekNumber },
         include: {
@@ -66,7 +79,19 @@ export default async function MicrocycleDetailPage({
     notFound()
   }
 
+  // Helpers para acceso seguro a mesociclos (soporta isForked)
+  const getMesocycleTitle = (mesocycle: any) =>
+    mesocycle.isForked
+      ? (mesocycle.title ?? 'Plan personalizado')
+      : (mesocycle.template?.title ?? 'Plan sin título')
+
+  const getMesocycleDays = (mesocycle: any) =>
+    mesocycle.isForked
+      ? (mesocycle.clientDays ?? [])
+      : (mesocycle.template?.days ?? [])
+
   const microcycle = activeMesocycle.microcycles[0]
+  const days = getMesocycleDays(activeMesocycle)
   const isFutureWeek = new Date() < new Date(microcycle.startDate)
 
   // Verificar qué días ya están registrados
@@ -82,7 +107,7 @@ export default async function MicrocycleDetailPage({
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Semana {weekNumber} - {activeMesocycle.template.title}
+          Semana {weekNumber} - {getMesocycleTitle(activeMesocycle)}
         </h1>
         <p className="mt-2 text-gray-600">
           {formatDate(microcycle.startDate)} - {formatDate(microcycle.endDate)}
@@ -111,7 +136,7 @@ export default async function MicrocycleDetailPage({
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
-                {activeMesocycle.template.days.length - microcycle.workoutDayLogs.length}
+                {days.length - microcycle.workoutDayLogs.length}
               </div>
               <p className="text-sm text-gray-600">Días Pendientes</p>
             </div>
@@ -123,7 +148,7 @@ export default async function MicrocycleDetailPage({
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-gray-900">Selecciona el Día a Registrar</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeMesocycle.template.days.map((day) => {
+          {days.map((day: any) => {
             const isLogged = loggedDayIds.has(day.id)
             const dayLog = microcycle.workoutDayLogs.find((log) => log.templateDay.id === day.id)
 
@@ -155,7 +180,7 @@ export default async function MicrocycleDetailPage({
                       {day.exercises.length} ejercicios
                     </p>
                     <div className="space-y-1">
-                      {day.exercises.slice(0, 3).map((exercise, idx) => (
+                      {day.exercises.slice(0, 3).map((exercise: any, idx: number) => (
                         <p key={exercise.id} className="text-sm text-gray-600">
                           {idx + 1}. {exercise.name}
                         </p>

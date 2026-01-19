@@ -42,3 +42,5 @@ next-env.d.ts
 # Archivos temporales de Claude / IA
 tmpclaude-*
 .claude/
+
+nul

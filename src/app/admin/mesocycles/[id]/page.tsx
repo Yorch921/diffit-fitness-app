@@ -45,6 +45,20 @@ export default async function MesocycleDetailPage({
           },
         },
       },
+      // Incluir clientDays para soportar fork-on-write
+      clientDays: {
+        orderBy: { order: 'asc' },
+        include: {
+          exercises: {
+            orderBy: { order: 'asc' },
+            include: {
+              sets: {
+                orderBy: { setNumber: 'asc' },
+              },
+            },
+          },
+        },
+      },
       microcycles: {
         orderBy: { weekNumber: 'asc' },
       },
@@ -55,7 +69,7 @@ export default async function MesocycleDetailPage({
     notFound()
   }
 
-  // Serializar fechas
+  // Serializar fechas y manejar casos donde template puede ser null (isForked = true)
   const serializedMesocycle = {
     ...mesocycle,
     startDate: mesocycle.startDate.toISOString(),
@@ -63,7 +77,8 @@ export default async function MesocycleDetailPage({
     completedAt: mesocycle.completedAt?.toISOString() || null,
     createdAt: mesocycle.createdAt.toISOString(),
     updatedAt: mesocycle.updatedAt.toISOString(),
-    template: {
+    // Template puede ser null cuando isForked = true
+    template: mesocycle.template ? {
       ...mesocycle.template,
       createdAt: mesocycle.template.createdAt.toISOString(),
       updatedAt: mesocycle.template.updatedAt.toISOString(),
@@ -82,7 +97,23 @@ export default async function MesocycleDetailPage({
           })),
         })),
       })),
-    },
+    } : null,
+    // Serializar clientDays para fork-on-write
+    clientDays: mesocycle.clientDays.map((day) => ({
+      ...day,
+      createdAt: day.createdAt.toISOString(),
+      updatedAt: day.updatedAt.toISOString(),
+      exercises: day.exercises.map((exercise) => ({
+        ...exercise,
+        createdAt: exercise.createdAt.toISOString(),
+        updatedAt: exercise.updatedAt.toISOString(),
+        sets: exercise.sets.map((set) => ({
+          ...set,
+          createdAt: set.createdAt.toISOString(),
+          updatedAt: set.updatedAt.toISOString(),
+        })),
+      })),
+    })),
     microcycles: mesocycle.microcycles.map((m) => ({
       ...m,
       startDate: m.startDate.toISOString(),

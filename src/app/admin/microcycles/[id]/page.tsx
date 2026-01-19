@@ -52,6 +52,19 @@ export default async function MicrocycleDetailPage({
               },
             },
           },
+          clientDays: {
+            orderBy: { dayNumber: 'asc' },
+            include: {
+              exercises: {
+                orderBy: { order: 'asc' },
+                include: {
+                  sets: {
+                    orderBy: { setNumber: 'asc' },
+                  },
+                },
+              },
+            },
+          },
         },
       },
       workoutDayLogs: {
@@ -86,7 +99,18 @@ export default async function MicrocycleDetailPage({
     notFound()
   }
 
-  const totalDays = microcycle.mesocycle.template.numberOfDays
+  // Helpers para acceso seguro a mesociclos (soporta isForked)
+  const getMesocycleTitle = (mesocycle: any) =>
+    mesocycle.isForked
+      ? (mesocycle.title ?? 'Plan personalizado')
+      : (mesocycle.template?.title ?? 'Plan sin título')
+
+  const getNumberOfDays = (mesocycle: any) =>
+    mesocycle.isForked
+      ? (mesocycle.clientDays?.length ?? 0)
+      : (mesocycle.template?.numberOfDays ?? 0)
+
+  const totalDays = getNumberOfDays(microcycle.mesocycle)
   const completedDays = microcycle.workoutDayLogs.length
   const progressPercent = Math.round((completedDays / totalDays) * 100)
 
@@ -113,7 +137,7 @@ export default async function MicrocycleDetailPage({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="p-3 bg-blue-50 rounded-lg">
               <div className="text-sm text-gray-600">Plan</div>
-              <div className="font-semibold">{microcycle.mesocycle.template.title}</div>
+              <div className="font-semibold">{getMesocycleTitle(microcycle.mesocycle)}</div>
             </div>
             <div className="p-3 bg-green-50 rounded-lg">
               <div className="text-sm text-gray-600">Días Completados</div>

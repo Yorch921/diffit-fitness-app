@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// PATCH /api/admin/exercises/[id] - Editar ejercicio
+// PATCH /api/admin/client-exercises/[id] - Editar ejercicio de cliente (plan forked)
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
@@ -18,12 +18,12 @@ export async function PATCH(
     const body = await request.json()
     const { name, description, videoUrl, trainerComment, sets } = body
 
-    // Verificar que el ejercicio pertenece al trainer
-    const exercise = await prisma.exercise.findFirst({
+    // Verificar que el ejercicio pertenece al trainer (a través de mesocycle)
+    const exercise = await prisma.clientExercise.findFirst({
       where: {
         id: params.id,
-        templateDay: {
-          template: {
+        clientDay: {
+          mesocycle: {
             trainerId: session.user.id,
           },
         },
@@ -35,7 +35,7 @@ export async function PATCH(
 
     if (!exercise) {
       return NextResponse.json(
-        { error: 'Exercise not found' },
+        { error: 'Ejercicio no encontrado' },
         { status: 404 }
       )
     }
@@ -48,7 +48,7 @@ export async function PATCH(
       )
     }
 
-    // Si se proporcionan series, validarlas y normalizar tipos
+    // Validar y normalizar series si se proporcionan
     if (sets) {
       if (!Array.isArray(sets) || sets.length === 0) {
         return NextResponse.json(
@@ -59,12 +59,10 @@ export async function PATCH(
 
       for (let i = 0; i < sets.length; i++) {
         const set = sets[i]
-        // Convertir a numeros si vienen como strings
         const setNumber = typeof set.setNumber === 'string' ? parseInt(set.setNumber, 10) : set.setNumber
         const minReps = typeof set.minReps === 'string' ? parseInt(set.minReps, 10) : set.minReps
         const maxReps = typeof set.maxReps === 'string' ? parseInt(set.maxReps, 10) : set.maxReps
 
-        // Validar que sean numeros validos
         if (isNaN(setNumber) || setNumber < 1) {
           return NextResponse.json(
             { error: `Serie ${i + 1}: número de serie inválido` },
@@ -90,7 +88,6 @@ export async function PATCH(
           )
         }
 
-        // Normalizar los valores en el array
         sets[i] = {
           ...set,
           setNumber,
@@ -110,8 +107,8 @@ export async function PATCH(
 
     // Si se proporcionan series, eliminar las existentes y crear las nuevas
     if (sets) {
-      await prisma.exerciseSet.deleteMany({
-        where: { exerciseId: params.id },
+      await prisma.clientExerciseSet.deleteMany({
+        where: { clientExerciseId: params.id },
       })
 
       updateData.sets = {
@@ -124,7 +121,7 @@ export async function PATCH(
       }
     }
 
-    const updatedExercise = await prisma.exercise.update({
+    const updatedExercise = await prisma.clientExercise.update({
       where: { id: params.id },
       data: updateData,
       include: {
@@ -136,15 +133,15 @@ export async function PATCH(
 
     return NextResponse.json(updatedExercise)
   } catch (error) {
-    console.error('Error updating exercise:', error)
+    console.error('Error updating client exercise:', error)
     return NextResponse.json(
-      { error: 'Error updating exercise' },
+      { error: 'Error al actualizar ejercicio' },
       { status: 500 }
     )
   }
 }
 
-// DELETE /api/admin/exercises/[id] - Eliminar ejercicio
+// DELETE /api/admin/client-exercises/[id] - Eliminar ejercicio de cliente
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -157,47 +154,33 @@ export async function DELETE(
     }
 
     // Verificar que el ejercicio pertenece al trainer
-    const exercise = await prisma.exercise.findFirst({
+    const exercise = await prisma.clientExercise.findFirst({
       where: {
         id: params.id,
-        templateDay: {
-          template: {
+        clientDay: {
+          mesocycle: {
             trainerId: session.user.id,
           },
         },
-      },
-      include: {
-        exerciseLogs: true,
       },
     })
 
     if (!exercise) {
       return NextResponse.json(
-        { error: 'Exercise not found' },
+        { error: 'Ejercicio no encontrado' },
         { status: 404 }
       )
     }
 
-    // Verificar si hay logs asociados
-    if (exercise.exerciseLogs.length > 0) {
-      return NextResponse.json(
-        {
-          error:
-            'No se puede eliminar este ejercicio porque tiene registros de entrenamiento asociados',
-        },
-        { status: 400 }
-      )
-    }
-
-    await prisma.exercise.delete({
+    await prisma.clientExercise.delete({
       where: { id: params.id },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting exercise:', error)
+    console.error('Error deleting client exercise:', error)
     return NextResponse.json(
-      { error: 'Error deleting exercise' },
+      { error: 'Error al eliminar ejercicio' },
       { status: 500 }
     )
   }

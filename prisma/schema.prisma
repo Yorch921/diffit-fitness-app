@@ -219,7 +219,7 @@ model ExerciseSet {
 model ClientMesocycle {
   id                String    @id @default(cuid())
   clientId          String
-  templateId        String
+  templateId        String?   // Opcional: null cuando isForked = true
   trainerId         String
 
   startDate         DateTime
@@ -229,15 +229,17 @@ model ClientMesocycle {
   isActive          Boolean   @default(true)
   isCompleted       Boolean   @default(false)
   completedAt       DateTime?
+  isForked          Boolean   @default(false)  // true = plan independiente del cliente
 
   trainerNotes      String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   client            User      @relation("ClientMesocycles", fields: [clientId], references: [id], onDelete: Cascade)
-  template          TrainingTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  template          TrainingTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
   trainer           User      @relation("TrainerMesocycles", fields: [trainerId], references: [id], onDelete: Cascade)
   microcycles       Microcycle[]
+  clientDays        ClientDay[]  // Días propios del cliente cuando isForked = true
 
   @@index([clientId])
   @@index([trainerId])
@@ -317,6 +319,62 @@ model SetLog {
 
   @@unique([exerciseLogId, setNumber])
   @@index([exerciseLogId])
+}
+
+// ============================================================================
+// MODELOS PARA FORK-ON-WRITE (Plan del cliente independiente)
+// ============================================================================
+
+model ClientDay {
+  id              String    @id @default(cuid())
+  mesocycleId     String
+  dayNumber       Int
+  name            String
+  description     String?
+  order           Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  mesocycle       ClientMesocycle @relation(fields: [mesocycleId], references: [id], onDelete: Cascade)
+  exercises       ClientExercise[]
+
+  @@unique([mesocycleId, dayNumber])
+  @@index([mesocycleId])
+}
+
+model ClientExercise {
+  id              String       @id @default(cuid())
+  clientDayId     String
+  name            String
+  description     String?
+  videoUrl        String?
+  trainerComment  String?
+  order           Int
+  muscleGroup     MuscleGroup  @default(UPPER_BODY)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  clientDay       ClientDay    @relation(fields: [clientDayId], references: [id], onDelete: Cascade)
+  sets            ClientExerciseSet[]
+
+  @@index([clientDayId])
+  @@index([order])
+}
+
+model ClientExerciseSet {
+  id                String    @id @default(cuid())
+  clientExerciseId  String
+  setNumber         Int
+  minReps           Int
+  maxReps           Int
+  restSeconds       Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  clientExercise    ClientExercise @relation(fields: [clientExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([clientExerciseId, setNumber])
+  @@index([clientExerciseId])
 }
 
 // ============================================================================

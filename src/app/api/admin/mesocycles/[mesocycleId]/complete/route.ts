@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // POST /api/admin/mesocycles/[id]/complete - Marcar mesociclo como completado
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { mesocycleId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function POST(
     // Verificar que el mesociclo pertenece al trainer
     const existingMesocycle = await prisma.clientMesocycle.findFirst({
       where: {
-        id: params.id,
+        id: params.mesocycleId,
         trainerId: session.user.id,
       },
     })
@@ -31,7 +31,7 @@ export async function POST(
     }
 
     const mesocycle = await prisma.clientMesocycle.update({
-      where: { id: params.id },
+      where: { id: params.mesocycleId },
       data: {
         isActive: false,
         isCompleted: true,

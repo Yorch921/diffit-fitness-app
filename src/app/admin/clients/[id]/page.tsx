@@ -39,6 +39,19 @@ export default async function ClientDetailPage({
               },
             },
           },
+          clientDays: {
+            orderBy: { dayNumber: 'asc' },
+            include: {
+              exercises: {
+                orderBy: { order: 'asc' },
+                include: {
+                  sets: {
+                    orderBy: { setNumber: 'asc' },
+                  },
+                },
+              },
+            },
+          },
           microcycles: {
             orderBy: { weekNumber: 'asc' },
             include: {
@@ -89,21 +102,38 @@ export default async function ClientDetailPage({
       completedAt: mesocycle.completedAt?.toISOString() || null,
       createdAt: mesocycle.createdAt.toISOString(),
       updatedAt: mesocycle.updatedAt.toISOString(),
-      template: {
-        ...mesocycle.template,
-        createdAt: mesocycle.template.createdAt.toISOString(),
-        updatedAt: mesocycle.template.updatedAt.toISOString(),
-        days: mesocycle.template.days.map((day) => ({
-          ...day,
-          createdAt: day.createdAt.toISOString(),
-          updatedAt: day.updatedAt.toISOString(),
-          exercises: day.exercises.map((exercise) => ({
-            ...exercise,
-            createdAt: exercise.createdAt.toISOString(),
-            updatedAt: exercise.updatedAt.toISOString(),
+      template: mesocycle.template
+        ? {
+            ...mesocycle.template,
+            createdAt: mesocycle.template.createdAt.toISOString(),
+            updatedAt: mesocycle.template.updatedAt.toISOString(),
+            days: mesocycle.template.days.map((day) => ({
+              ...day,
+              createdAt: day.createdAt.toISOString(),
+              updatedAt: day.updatedAt.toISOString(),
+              exercises: day.exercises.map((exercise) => ({
+                ...exercise,
+                createdAt: exercise.createdAt.toISOString(),
+                updatedAt: exercise.updatedAt.toISOString(),
+              })),
+            })),
+          }
+        : null,
+      clientDays: mesocycle.clientDays.map((day) => ({
+        ...day,
+        createdAt: day.createdAt.toISOString(),
+        updatedAt: day.updatedAt.toISOString(),
+        exercises: day.exercises.map((exercise) => ({
+          ...exercise,
+          createdAt: exercise.createdAt.toISOString(),
+          updatedAt: exercise.updatedAt.toISOString(),
+          sets: exercise.sets.map((set) => ({
+            ...set,
+            createdAt: set.createdAt.toISOString(),
+            updatedAt: set.updatedAt.toISOString(),
           })),
         })),
-      },
+      })),
       microcycles: mesocycle.microcycles.map((microcycle) => ({
         ...microcycle,
         startDate: microcycle.startDate.toISOString(),

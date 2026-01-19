@@ -376,7 +376,9 @@ export async function GET(req: NextRequest) {
       },
       mesocycleInfo: {
         id: activeMesocycle.id,
-        templateTitle: activeMesocycle.template.title,
+        templateTitle: activeMesocycle.isForked
+          ? 'Plan personalizado'
+          : (activeMesocycle.template?.title ?? 'Plan sin título'),
         startDate: activeMesocycle.startDate,
         durationWeeks: activeMesocycle.durationWeeks,
       },

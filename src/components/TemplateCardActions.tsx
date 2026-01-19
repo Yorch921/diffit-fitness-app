@@ -18,6 +18,7 @@ export default function TemplateCardActions({
 }: TemplateCardActionsProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
 
   const handleDelete = async () => {
     if (
@@ -47,27 +48,70 @@ export default function TemplateCardActions({
     }
   }
 
+  const handleDuplicate = async () => {
+    const newTitle = prompt(
+      'Nombre para la nueva plantilla:',
+      `${templateTitle} (copia)`
+    )
+
+    if (!newTitle) return
+
+    setDuplicating(true)
+    try {
+      const response = await fetch(`/api/admin/training-templates/${templateId}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newTitle }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        router.push(`/admin/training-templates/${data.templateId}`)
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Error al duplicar la plantilla')
+      }
+    } catch (error) {
+      alert('Error al duplicar la plantilla')
+    } finally {
+      setDuplicating(false)
+    }
+  }
+
   return (
-    <div className="flex gap-2">
-      <Link href={`/admin/training-templates/${templateId}`} className="flex-1">
-        <Button variant="outline" className="w-full">
-          Editar
-        </Button>
-      </Link>
-      <Link href={`/admin/training-templates/${templateId}`} className="flex-1">
-        <Button className="w-full">Ver Detalle</Button>
-      </Link>
-      {!hasAssignments && (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Link href={`/admin/training-templates/${templateId}`} className="flex-1">
+          <Button variant="outline" className="w-full">
+            Editar
+          </Button>
+        </Link>
+        <Link href={`/admin/training-templates/${templateId}`} className="flex-1">
+          <Button className="w-full">Ver Detalle</Button>
+        </Link>
+      </div>
+      <div className="flex gap-2">
         <Button
           variant="outline"
-          onClick={handleDelete}
-          disabled={loading}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
-          title="Eliminar plantilla"
+          onClick={handleDuplicate}
+          disabled={duplicating}
+          className="flex-1"
+          title="Duplicar plantilla"
         >
-          {loading ? '...' : '🗑️'}
+          {duplicating ? 'Duplicando...' : '📋 Duplicar'}
         </Button>
-      )}
+        {!hasAssignments && (
+          <Button
+            variant="outline"
+            onClick={handleDelete}
+            disabled={loading}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+            title="Eliminar plantilla"
+          >
+            {loading ? '...' : '🗑️'}
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

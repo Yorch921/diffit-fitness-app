@@ -17,6 +17,17 @@ interface ClientDetailTabsProps {
   client: any
 }
 
+// Helpers para acceso seguro a mesociclos (soporta isForked)
+const getMesocycleTitle = (mesocycle: any) =>
+  mesocycle.isForked
+    ? (mesocycle.title ?? 'Plan personalizado')
+    : (mesocycle.template?.title ?? 'Plan sin título')
+
+const getNumberOfDays = (mesocycle: any) =>
+  mesocycle.isForked
+    ? (mesocycle.clientDays?.length ?? 0)
+    : (mesocycle.template?.numberOfDays ?? 0)
+
 export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('general')
   const [isEditing, setIsEditing] = useState(false)
@@ -481,7 +492,7 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
                 <div>
                   <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-900">
-                      <strong>Plantilla Base:</strong> {activeTraining.template.title}
+                      <strong>{activeTraining.isForked ? 'Plan Personalizado:' : 'Plantilla Base:'}</strong> {getMesocycleTitle(activeTraining)}
                     </p>
                   </div>
                   <div className="grid grid-cols-3 gap-4 mb-4">
@@ -491,7 +502,7 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
                     </div>
                     <div className="text-center p-3 bg-green-50 rounded-lg">
                       <div className="text-lg font-bold text-green-600">
-                        {activeTraining.template.numberOfDays}
+                        {getNumberOfDays(activeTraining)}
                       </div>
                       <div className="text-xs text-gray-600">Días/Semana</div>
                     </div>
@@ -564,7 +575,7 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
                     {startedWeeks.map((micro: any) => {
                       const isActive = activeWeek?.id === micro.id
                       const completedDays = micro._count?.workoutDayLogs || 0
-                      const totalDays = activeTraining.template.numberOfDays
+                      const totalDays = getNumberOfDays(activeTraining)
                       const progressPercent = Math.round((completedDays / totalDays) * 100)
 
                       return (
@@ -632,7 +643,7 @@ export default function ClientDetailTabs({ client }: ClientDetailTabsProps) {
                     <div key={meso.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <h4 className="font-medium">{meso.template.title}</h4>
+                          <h4 className="font-medium">{getMesocycleTitle(meso)}</h4>
                           <p className="text-sm text-gray-600">
                             {meso.durationWeeks} semanas • {formatDate(meso.startDate)} - {formatDate(meso.endDate)}
                           </p>

@@ -39,6 +39,19 @@ export default async function TrainingPage() {
           },
         },
       },
+      clientDays: {
+        orderBy: { dayNumber: 'asc' },
+        include: {
+          exercises: {
+            orderBy: { order: 'asc' },
+            include: {
+              sets: {
+                orderBy: { setNumber: 'asc' },
+              },
+            },
+          },
+        },
+      },
       trainer: {
         select: {
           name: true,
@@ -69,6 +82,12 @@ export default async function TrainingPage() {
           numberOfDays: true,
         },
       },
+      clientDays: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       trainer: {
         select: {
           name: true,
@@ -80,6 +99,27 @@ export default async function TrainingPage() {
     },
     orderBy: { completedAt: 'desc' },
   })
+
+  // Helpers para acceso seguro a mesociclos (soporta isForked)
+  const getMesocycleTitle = (mesocycle: any) =>
+    mesocycle.isForked
+      ? (mesocycle.title ?? 'Plan personalizado')
+      : (mesocycle.template?.title ?? 'Plan sin título')
+
+  const getMesocycleDays = (mesocycle: any) =>
+    mesocycle.isForked
+      ? (mesocycle.clientDays ?? [])
+      : (mesocycle.template?.days ?? [])
+
+  const getNumberOfDays = (mesocycle: any) =>
+    mesocycle.isForked
+      ? (mesocycle.clientDays?.length ?? 0)
+      : (mesocycle.template?.numberOfDays ?? 0)
+
+  const getMesocycleDescription = (mesocycle: any) =>
+    mesocycle.isForked
+      ? null
+      : (mesocycle.template?.description ?? null)
 
   // Función para determinar la semana actual basada en registros
   // La semana actual es la última que tiene registros de entrenamiento
@@ -133,10 +173,10 @@ export default async function TrainingPage() {
                       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
                         ACTIVO
                       </span>
-                      {activeMesocycle.template.title}
+                      {getMesocycleTitle(activeMesocycle)}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {activeMesocycle.durationWeeks} semanas • {activeMesocycle.template.numberOfDays} días por semana
+                      {activeMesocycle.durationWeeks} semanas • {getNumberOfDays(activeMesocycle)} días por semana
                       <br />
                       Inicio: {formatDate(activeMesocycle.startDate)} • Fin: {formatDate(activeMesocycle.endDate)}
                     </CardDescription>
@@ -144,8 +184,8 @@ export default async function TrainingPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {activeMesocycle.template.description && (
-                  <p className="text-gray-600 mb-6">{activeMesocycle.template.description}</p>
+                {getMesocycleDescription(activeMesocycle) && (
+                  <p className="text-gray-600 mb-6">{getMesocycleDescription(activeMesocycle)}</p>
                 )}
 
                 {/* Estadísticas del mesociclo */}
@@ -158,7 +198,7 @@ export default async function TrainingPage() {
                   </div>
                   <div className="text-center p-3 bg-gray-50 rounded-lg">
                     <div className="text-2xl font-bold text-gray-900">
-                      {activeMesocycle.template.numberOfDays}
+                      {getNumberOfDays(activeMesocycle)}
                     </div>
                     <p className="text-xs text-gray-600">Días/semana</p>
                   </div>
@@ -173,7 +213,7 @@ export default async function TrainingPage() {
                 {/* Estructura del template (días) */}
                 <div className="space-y-4">
                   <h4 className="font-semibold text-gray-900">Estructura de la Semana Tipo</h4>
-                  {activeMesocycle.template.days.map((day) => (
+                  {getMesocycleDays(activeMesocycle).map((day: any) => (
                     <Card key={day.id} className="border-l-4 border-l-blue-500">
                       <CardHeader>
                         <CardTitle className="text-lg">{day.name}</CardTitle>
@@ -183,7 +223,7 @@ export default async function TrainingPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3">
-                          {day.exercises.map((exercise, idx) => (
+                          {day.exercises.map((exercise: any, idx: number) => (
                             <div key={exercise.id} className="border-l-2 border-gray-200 pl-4">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -201,7 +241,7 @@ export default async function TrainingPage() {
                                     </p>
                                   )}
                                   <div className="mt-2 space-y-1">
-                                    {exercise.sets.map((set) => (
+                                    {exercise.sets.map((set: any) => (
                                       <div key={set.id} className="text-sm text-gray-700">
                                         <span className="font-medium">Serie {set.setNumber}:</span>{' '}
                                         {set.minReps === set.maxReps
@@ -343,13 +383,13 @@ export default async function TrainingPage() {
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{mesocycle.template.title}</h4>
+                    <h4 className="font-medium text-gray-900">{getMesocycleTitle(mesocycle)}</h4>
                     <p className="text-sm text-gray-500 mt-1">
                       {mesocycle.durationWeeks} semanas • {formatDate(mesocycle.startDate)} - {formatDate(mesocycle.endDate)}
                     </p>
-                    {mesocycle.template.description && (
+                    {getMesocycleDescription(mesocycle) && (
                       <p className="text-sm text-gray-600 mt-1 line-clamp-1">
-                        {mesocycle.template.description}
+                        {getMesocycleDescription(mesocycle)}
                       </p>
                     )}
                   </div>

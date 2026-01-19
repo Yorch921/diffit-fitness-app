@@ -37,6 +37,14 @@ export default async function MesocycleHistoryPage({
           },
         },
       },
+      clientDays: {
+        orderBy: { dayNumber: 'asc' },
+        include: {
+          exercises: {
+            orderBy: { order: 'asc' },
+          },
+        },
+      },
       trainer: {
         select: {
           name: true,
@@ -71,6 +79,12 @@ export default async function MesocycleHistoryPage({
       },
     },
   })
+
+  // Helpers para acceso seguro a mesociclos (soporta isForked)
+  const getMesocycleTitle = (m: any) =>
+    m.isForked
+      ? (m.title ?? 'Plan personalizado')
+      : (m.template?.title ?? 'Plan sin título')
 
   if (!mesocycle) {
     notFound()
@@ -176,21 +190,33 @@ export default async function MesocycleHistoryPage({
     completedAt: mesocycle.completedAt?.toISOString() || null,
     createdAt: mesocycle.createdAt.toISOString(),
     updatedAt: mesocycle.updatedAt.toISOString(),
-    template: {
-      ...mesocycle.template,
-      createdAt: mesocycle.template.createdAt.toISOString(),
-      updatedAt: mesocycle.template.updatedAt.toISOString(),
-      days: mesocycle.template.days.map((day) => ({
-        ...day,
-        createdAt: day.createdAt.toISOString(),
-        updatedAt: day.updatedAt.toISOString(),
-        exercises: day.exercises.map((ex) => ({
-          ...ex,
-          createdAt: ex.createdAt.toISOString(),
-          updatedAt: ex.updatedAt.toISOString(),
-        })),
+    template: mesocycle.template
+      ? {
+          ...mesocycle.template,
+          createdAt: mesocycle.template.createdAt.toISOString(),
+          updatedAt: mesocycle.template.updatedAt.toISOString(),
+          days: mesocycle.template.days.map((day) => ({
+            ...day,
+            createdAt: day.createdAt.toISOString(),
+            updatedAt: day.updatedAt.toISOString(),
+            exercises: day.exercises.map((ex) => ({
+              ...ex,
+              createdAt: ex.createdAt.toISOString(),
+              updatedAt: ex.updatedAt.toISOString(),
+            })),
+          })),
+        }
+      : null,
+    clientDays: mesocycle.clientDays.map((day) => ({
+      ...day,
+      createdAt: day.createdAt.toISOString(),
+      updatedAt: day.updatedAt.toISOString(),
+      exercises: day.exercises.map((ex) => ({
+        ...ex,
+        createdAt: ex.createdAt.toISOString(),
+        updatedAt: ex.updatedAt.toISOString(),
       })),
-    },
+    })),
     microcycles: mesocycle.microcycles.map((micro) => ({
       ...micro,
       startDate: micro.startDate.toISOString(),
@@ -226,7 +252,7 @@ export default async function MesocycleHistoryPage({
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Historial del Mesociclo</h1>
-        <p className="mt-2 text-gray-600">{mesocycle.template.title}</p>
+        <p className="mt-2 text-gray-600">{getMesocycleTitle(mesocycle)}</p>
         <p className="text-sm text-gray-500">
           {formatDate(mesocycle.startDate)} - {formatDate(mesocycle.endDate)}
         </p>
@@ -282,8 +308,8 @@ export default async function MesocycleHistoryPage({
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-700">Plantilla Base</p>
-                <p className="text-gray-900">{mesocycle.template.title}</p>
+                <p className="text-sm font-medium text-gray-700">{mesocycle.isForked ? 'Plan Personalizado' : 'Plantilla Base'}</p>
+                <p className="text-gray-900">{getMesocycleTitle(mesocycle)}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-700">Entrenador</p>

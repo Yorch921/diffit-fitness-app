@@ -67,11 +67,19 @@ export default function MesocycleEditor({ mesocycle }: MesocycleEditorProps) {
               <CardTitle className="text-2xl">
                 Plan de Entrenamiento - {mesocycle.client.name}
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-2">
-                Basado en: {mesocycle.template.title}
-              </p>
+              {mesocycle.isForked ? (
+                <p className="text-sm text-green-600 mt-2">
+                  Plan personalizado (desvinculado de plantilla)
+                </p>
+              ) : mesocycle.template ? (
+                <p className="text-sm text-gray-600 mt-2">
+                  Basado en: {mesocycle.template.title}
+                </p>
+              ) : null}
               <p className="text-xs text-gray-500 mt-1">
-                {mesocycle.durationWeeks} semanas • {mesocycle.template.numberOfDays} días/semana
+                {mesocycle.durationWeeks} semanas • {mesocycle.isForked
+                  ? `${mesocycle.clientDays?.length || 0} días/semana`
+                  : `${mesocycle.template?.numberOfDays || 0} días/semana`}
               </p>
             </div>
             <div className="flex gap-2">
@@ -118,7 +126,14 @@ export default function MesocycleEditor({ mesocycle }: MesocycleEditorProps) {
       </Card>
 
       {/* Template Editor - reuse existing component */}
-      <TemplateEditor template={mesocycle.template} hideHeader={true} />
+      <TemplateEditor
+        template={mesocycle.template}
+        hideHeader={true}
+        mesocycleId={mesocycle.id}
+        clientName={mesocycle.client.name}
+        isForked={mesocycle.isForked}
+        clientDays={mesocycle.clientDays}
+      />
 
       {/* Save as Template Modal */}
       {showSaveAsTemplateModal && (

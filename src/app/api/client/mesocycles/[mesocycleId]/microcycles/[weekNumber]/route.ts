@@ -3,10 +3,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// GET /api/client/mesocycles/[id]/microcycles/[weekNumber] - Obtener microciclo con logs
+// GET /api/client/mesocycles/[mesocycleId]/microcycles/[weekNumber] - Obtener microciclo con logs
 export async function GET(
   request: Request,
-  { params }: { params: { id: string; weekNumber: string } }
+  { params }: { params: { mesocycleId: string; weekNumber: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -26,7 +26,7 @@ export async function GET(
 
     const microcycle = await prisma.microcycle.findFirst({
       where: {
-        mesocycleId: params.id,
+        mesocycleId: params.mesocycleId,
         weekNumber: weekNum,
         mesocycle: {
           clientId: session.user.id,
