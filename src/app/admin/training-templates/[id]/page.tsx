@@ -35,7 +35,10 @@ export default async function TemplateDetailPage({
         },
       },
       mesocycles: {
-        where: { isActive: true },
+        where: {
+          isActive: true,
+          trainerId: session.user.id,
+        },
         include: {
           client: {
             select: {

@@ -26,11 +26,13 @@ export default async function TrainingTemplatesPage() {
           exercises: true,
         },
       },
-      _count: {
+      mesocycles: {
+        where: {
+          trainerId: session.user.id,
+          isForked: false,
+        },
         select: {
-          mesocycles: {
-            where: { isForked: false }
-          }
+          id: true,
         },
       },
     },
@@ -78,6 +80,9 @@ export default async function TrainingTemplatesPage() {
               0
             )
 
+            // Contar mesocycles vinculados (ya filtrados por trainerId e isForked=false en la query)
+            const linkedMesocyclesCount = template.mesocycles.length
+
             return (
               <Card key={template.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -88,9 +93,9 @@ export default async function TrainingTemplatesPage() {
                         {template.numberOfDays} días por semana
                       </CardDescription>
                     </div>
-                    {template._count.mesocycles > 0 && (
+                    {linkedMesocyclesCount > 0 && (
                       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                        {template._count.mesocycles} asignados
+                        {linkedMesocyclesCount} asignado{linkedMesocyclesCount !== 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
@@ -120,7 +125,7 @@ export default async function TrainingTemplatesPage() {
                   <TemplateCardActions
                     templateId={template.id}
                     templateTitle={template.title}
-                    hasAssignments={template._count.mesocycles > 0}
+                    hasAssignments={linkedMesocyclesCount > 0}
                   />
                 </CardContent>
               </Card>

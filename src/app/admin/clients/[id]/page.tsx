@@ -1,5 +1,3 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import ClientDetailTabs from '@/components/ClientDetailTabs'
@@ -9,20 +7,11 @@ export default async function ClientDetailPage({
 }: {
   params: { id: string }
 }) {
-  const session = await getServerSession(authOptions)
-
-  const isTrainerOrAdmin = session?.user.role === 'TRAINER' || session?.user.role === 'ADMIN'
-
   const client = await prisma.user.findFirst({
-    where: isTrainerOrAdmin
-      ? {
-          id: params.id,
-          trainerId: session!.user.id,
-        }
-      : {
-          id: params.id,
-          role: 'CLIENT',
-        },
+    where: {
+      id: params.id,
+      role: 'CLIENT',
+    },
     include: {
       nutritionPlan: {
         orderBy: { createdAt: 'desc' },
